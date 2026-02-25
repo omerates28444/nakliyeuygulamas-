@@ -1,0 +1,42 @@
+import 'package:flutter/material.dart';
+import 'osm_map_home_screen.dart';
+
+class AppShell extends StatelessWidget {
+  const AppShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text("Uygulamadan çıkılsın mı?"),
+            content: const Text("Çıkmak istiyor musun?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Hayır"),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Evet, çık"),
+              ),
+            ],
+          ),
+        );
+
+        if (ok == true) {
+          // ignore: use_build_context_synchronously
+          Navigator.of(context).pop();
+        }
+      },
+      child: const Scaffold(
+        body: OsmMapHomeScreen(),
+      ),
+    );
+  }
+}
