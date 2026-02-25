@@ -10,7 +10,7 @@ class LoadDetailScreen extends StatefulWidget {
 }
 
 class _LoadDetailScreenState extends State<LoadDetailScreen> {
-  final priceCtrl = TextEditingController(text: "3000");
+  final priceCtrl = TextEditingController();
   final noteCtrl = TextEditingController();
 
   @override

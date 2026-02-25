@@ -11,6 +11,7 @@ class Load {
   final String status; // "open" | "matched" | "done"
   final double? fromLat;
   final double? fromLng;
+  final String? deliveryPhotoUrl;
 
   // ✅ yeni alanlar
   final String? shipperId;
@@ -33,6 +34,7 @@ class Load {
     this.shipperName,
     this.acceptedOfferId,
     this.acceptedDriverId,
+    this.deliveryPhotoUrl,
   });
 
   // ✅ Firestore -> Load
@@ -53,6 +55,7 @@ class Load {
       shipperName: d['shipperName']?.toString(),
       acceptedOfferId: d['acceptedOfferId']?.toString(),
       acceptedDriverId: d['acceptedDriverId']?.toString(),
+      deliveryPhotoUrl: d['deliveryPhotoUrl']?.toString(),
     );
   }
 
@@ -72,6 +75,7 @@ class Load {
       'shipperName': shipperName,
       'acceptedOfferId': acceptedOfferId,
       'acceptedDriverId': acceptedDriverId,
+      'deliveryPhotoUrl': deliveryPhotoUrl,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
@@ -89,6 +93,7 @@ class Load {
     String? shipperName,
     String? acceptedOfferId,
     String? acceptedDriverId,
+    String? deliveryPhotoUrl,
   }) {
     return Load(
       id: id ?? this.id,
@@ -103,6 +108,7 @@ class Load {
       shipperName: shipperName ?? this.shipperName,
       acceptedOfferId: acceptedOfferId ?? this.acceptedOfferId,
       acceptedDriverId: acceptedDriverId ?? this.acceptedDriverId,
+      deliveryPhotoUrl: deliveryPhotoUrl ?? this.deliveryPhotoUrl,
     );
   }
 }

@@ -6,10 +6,14 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../app_state.dart';
 import '../models/load.dart';
 import '../models/offer.dart';
+import '../services/OfferService.dart';
 import 'offers_inbox_screen.dart';
 import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
@@ -139,78 +143,17 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   // ✅ driver karşı teklifi kabul
-  Future<void> _driverAcceptCounter({
-    required Load load,
-    required Offer myOffer,
-  }) async {
-    final db = FirebaseFirestore.instance;
 
-    await db.runTransaction((tx) async {
-      final loadRef = db.collection("loads").doc(load.id);
-      final offerRef = db.collection("offers").doc(myOffer.id);
-
-      final loadSnap = await tx.get(loadRef);
-      if (!loadSnap.exists) throw Exception("İlan bulunamadı");
-
-      final data = loadSnap.data() as Map<String, dynamic>;
-      final status = (data["status"] ?? "open").toString();
-      final acceptedOfferId = data["acceptedOfferId"];
-
-      // ✅ Başkası aldıysa / ilan kapalıysa engelle
-      if (status != "open" && status != "matched") {
-        throw Exception("Bu ilan artık uygun değil.");
-      }
-      if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
-        throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
-      }
-
-      // ✅ benim teklifimi accepted
-      tx.update(offerRef, {"status": "accepted"});
-
-      // ✅ load'u matched yap
-      tx.update(loadRef, {
-        "status": "matched",
-        "acceptedOfferId": myOffer.id,
-        "acceptedDriverId": myOffer.driverId,
-      });
-    });
-
-    // ✅ transaction sonrası diğer teklifleri reddet
-    final others = await db.collection("offers").where("loadId", isEqualTo: load.id).get();
-    final batch = db.batch();
-    for (final d in others.docs) {
-      if (d.id == myOffer.id) continue;
-      batch.update(d.reference, {"status": "rejected"});
-    }
-    await batch.commit();
-  }
 
   // ✅ driver karşı teklifi reddedince: teklif silinsin
-  Future<void> _driverRejectCounter({required Offer myOffer}) async {
-    await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
-      "status": "driver_rejected_counter",
-      "driverRejectedAt": FieldValue.serverTimestamp(),
-    });
-  }
+
 
   bool _isExpiredForDelete(Load l) {
     final deadline = l.pickupDate.add(const Duration(days: 7));
     return DateTime.now().isAfter(deadline);
   }
 
-  Future<void> _deleteLoadWithOffersById(String loadId) async {
-    final db = FirebaseFirestore.instance;
 
-    final offersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-    final batch = db.batch();
-
-    for (final d in offersSnap.docs) {
-      batch.delete(d.reference);
-    }
-    batch.delete(db.collection("loads").doc(loadId));
-
-    await batch.commit();
-  }
 
   Future<void> _cleanupExpiredLoads(List<Load> loads) async {
     if (appState.role != "shipper") return;
@@ -223,7 +166,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 
     for (final l in myExpired) {
       try {
-        await _deleteLoadWithOffersById(l.id);
+        await OfferService().deleteLoadWithOffers(l.id);
       } catch (_) {}
     }
   }
@@ -299,7 +242,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 
   void _openJobSheet(Load l, LatLng dest) {
     final isDriver = appState.role == "driver";
-    final priceCtrl = TextEditingController(text: "3000");
+    final priceCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
 
     showModalBottomSheet(
@@ -762,7 +705,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                             onPressed: canRespondToCounter
                                             ? () async {
                             try {
-                            await _driverAcceptCounter(load: l, myOffer: myOffer);
+                              await OfferService().acceptCounterOffer(l, myOffer);
                             if (!mounted) return;
                             Navigator.pop(context);
                             _snack("Karşı teklif kabul edildi ✅");
@@ -780,7 +723,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                             onPressed: canRespondToCounter
                             ? () async {
                             try {
-                            await _driverRejectCounter(myOffer: myOffer);
+                              await OfferService().acceptCounterOffer(l, myOffer);
                             if (!mounted) return;
                             _snack("Karşı teklif reddedildi");
                             } catch (e) {
@@ -899,7 +842,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final trCenter = LatLng(39.0, 35.0);
-    final loadsStream = FirebaseFirestore.instance.collection("loads").snapshots();
+    // Sadece 'open' olan ilanları getir. (Şoförler için)
+    final loadsStream = FirebaseFirestore.instance
+        .collection("loads")
+        .where("status", isEqualTo: "open") // SADECE AÇIK İLANLAR
+        .snapshots();
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -1147,15 +1094,33 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                               onPressed: isPending
                                   ? null
                                   : () async {
-                                await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
-                                  "status": "delivered_pending",
-                                  "deliveredAt": FieldValue.serverTimestamp(),
-                                });
+                                try {
+                                  final picker = ImagePicker();
+                                  final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
 
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Teslim bildirildi ✅")),
-                                  );
+                                  if (image == null) return;
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fotoğraf yükleniyor, lütfen bekleyin...")));
+                                  }
+
+                                  final storageRef = FirebaseStorage.instance.ref().child('deliveries/${j.id}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+                                  await storageRef.putFile(File(image.path));
+                                  final downloadUrl = await storageRef.getDownloadURL();
+
+                                  await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
+                                    "status": "delivered_pending",
+                                    "deliveredAt": FieldValue.serverTimestamp(),
+                                    "deliveryPhotoUrl": downloadUrl,
+                                  });
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Teslim kanıtı yüklendi ve bildirildi ✅")),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
                                 }
                               },
                               child: Text(isPending ? "Onay bekliyor" : "İşi Bitir"),

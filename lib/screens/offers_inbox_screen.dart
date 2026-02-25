@@ -198,75 +198,100 @@ class _LoadOffersCard extends StatelessWidget {
 
             if (load.status == "delivered_pending")
               Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Expanded(child: Text("Durum: Teslim bildirildi ⏳")),
-                    FilledButton.icon(
-                      icon: const Icon(Icons.verified),
-                      label: const Text("Teslimi Onayla"),
-                      onPressed: () async {
-                        final ok = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Teslimi onayla?"),
-                            content: const Text("Onaylarsan iş tamamlanır ve şoföre puan verebilirsin."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Vazgeç"),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text("Onayla"),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (ok != true) return;
+                    const Text("Durum: Teslim bildirildi ⏳", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                    const SizedBox(height: 10),
 
-                        try {
-                          final loadSnap = await FirebaseFirestore.instance.collection("loads").doc(load.id).get();
-                          final data = loadSnap.data() ?? {};
-                          final driverId = (data["acceptedDriverId"] ?? "").toString();
+                    if (load.deliveryPhotoUrl != null) ...[
+                      const Text("Teslimat Kanıtı:", style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          load.deliveryPhotoUrl!,
+                          height: 150,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
-                          if (driverId.isEmpty) {
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.verified),
+                        label: const Text("Teslimi Onayla"),
+                        onPressed: () async {
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("Teslimi onayla?"),
+                              content: const Text("Onaylarsan iş tamamlanır ve şoföre puan verebilirsin."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text("Vazgeç"),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("Onayla"),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (ok != true) return;
+
+                          try {
+                            final loadSnap = await FirebaseFirestore.instance.collection("loads").doc(load.id).get();
+                            final data = loadSnap.data() ?? {};
+                            final driverId = (data["acceptedDriverId"] ?? "").toString();
+
+                            if (driverId.isEmpty) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Şoför bilgisi bulunamadı (acceptedDriverId boş).")),
+                              );
+                              return;
+                            }
+
+                            await _rateUserDialog(
+                              context,
+                              toUserId: driverId,
+                              toRole: "driver",
+                              title: "Şoförü Puanla",
+                              loadId: load.id,
+                              nameHint: "Şoför",
+                            );
+
+                            await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
+                              "status": "done",
+                              "doneAt": FieldValue.serverTimestamp(),
+                            });
+
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Şoför bilgisi bulunamadı (acceptedDriverId boş).")),
+                              const SnackBar(content: Text("Teslim onaylandı ✅ İş tamamlandı.")),
                             );
-                            return;
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Hata: $e")),
+                            );
                           }
-
-                          await _rateUserDialog(
-                            context,
-                            toUserId: driverId,
-                            toRole: "driver",
-                            title: "Şoförü Puanla",
-                            loadId: load.id,
-                            nameHint: "Şoför",
-                          );
-
-                          await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
-                            "status": "done",
-                            "doneAt": FieldValue.serverTimestamp(),
-                          });
-
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Teslim onaylandı ✅ İş tamamlandı.")),
-                          );
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Hata: $e")),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
+                        },
+                      ),
+                    ), // SizedBox kapanışı
+                  ], // Column children kapanışı
+                ), // Column kapanışı
+              ), // Padding kapanışı
 
             const SizedBox(height: 10),
             const Divider(),

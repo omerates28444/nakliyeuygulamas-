@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -263,10 +266,20 @@ class ActiveJobsScreen extends StatelessWidget {
     final status = (data["status"] ?? "").toString();
     if (status == "done") return;
 
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+
+    if (image == null) throw Exception("Teslimat fotoğrafı çekilmedi. İşlem iptal edildi.");
+
+    final storageRef = FirebaseStorage.instance.ref().child('deliveries/${loadId}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await storageRef.putFile(File(image.path));
+    final downloadUrl = await storageRef.getDownloadURL();
+
     await ref.update({
       "status": "delivered_pending",
       "deliveredAt": FieldValue.serverTimestamp(),
       "deliveredByDriverId": uid,
+      "deliveryPhotoUrl": downloadUrl,
     });
   }
 
@@ -301,3 +314,4 @@ class ActiveJobsScreen extends StatelessWidget {
     await batch.commit();
   }
 }
+

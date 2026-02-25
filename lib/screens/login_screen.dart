@@ -3,6 +3,7 @@ import '../app_state.dart';
 import '../services/auth_service.dart';
 import 'app_shell.dart';
 import 'role_select_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -188,8 +189,24 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         _goToApp();
       }
+    } on FirebaseAuthException catch (e) {
+      // Firebase'den gelen özel hataları yakalıyoruz
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        _snack("E-posta veya şifre hatalı.");
+      } else if (e.code == 'email-already-in-use') {
+        _snack("Bu e-posta adresi ile zaten bir hesap var.");
+      } else if (e.code == 'network-request-failed') {
+        _snack("İnternet bağlantınızı kontrol edin.");
+      } else if (e.code == 'invalid-email') {
+        _snack("Geçersiz bir e-posta adresi girdiniz.");
+      } else if (e.code == 'weak-password') {
+        _snack("Şifreniz çok zayıf, daha güçlü bir şifre belirleyin.");
+      } else {
+        _snack("Bir sorun oluştu. Lütfen tekrar deneyin.");
+      }
     } catch (e) {
-      _snack("Hata: $e");
+      // Firebase dışındaki diğer genel hatalar
+      _snack("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       if (mounted) setState(() => loading = false);
     }
