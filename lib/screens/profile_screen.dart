@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../models/load.dart';
 import '../app_state.dart';
 import 'role_select_screen.dart';
+import 'kyc_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -35,6 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final capacityCtrl = TextEditingController();
   final vehicleTypeCtrl = TextEditingController();
   String vehicleType = "Kamyonet";
+  String kycStatus = "none"; // Durumu saklamak için yeni değişken
+
 
 
   @override
@@ -108,14 +111,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final snap = await db.collection("users").doc(uid).get();
     final data = snap.data() ?? {};
 
-    nameCtrl.text = (data["name"] ?? "").toString();
-    phoneCtrl.text = (data["phone"] ?? "").toString();
-    cityCtrl.text = (data["city"] ?? "").toString();
-
+    // 'extra' isimli kutuyu alıyoruz
     final extra = (data["extra"] is Map) ? Map<String, dynamic>.from(data["extra"]) : <String, dynamic>{};
-    vehicleType = (extra["vehicleType"] ?? "Kamyonet").toString();
-    plateCtrl.text = (extra["plate"] ?? "").toString();
-    capacityCtrl.text = (extra["capacityKg"] ?? "").toString();
+
+    setState(() {
+      nameCtrl.text = (data["name"] ?? "").toString();
+      phoneCtrl.text = (data["phone"] ?? "").toString();
+      cityCtrl.text = (data["city"] ?? "").toString();
+
+      // Araç bilgilerini 'extra' içinden okuyoruz
+      vehicleType = (extra["vehicleType"] ?? "Kamyonet").toString();
+      plateCtrl.text = (extra["plate"] ?? "").toString();
+      capacityCtrl.text = (extra["capacityKg"] ?? "").toString();
+
+      // EN ÖNEMLİ SATIR: Onay durumunu 'extra' klasöründen alıyoruz
+      kycStatus = (extra["kycStatus"] ?? data["kycStatus"] ?? "none").toString();
+    });
   }
 
   Future<void> _saveProfile() async {
@@ -148,11 +159,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (plateCtrl.text.trim().isEmpty) throw Exception("Plaka boş olamaz");
         if (cap == null || cap <= 0) throw Exception("Kapasite geçerli olmalı");
 
-        update["extra"] = {
-          "vehicleType": vehicleType,
-          "plate": plateCtrl.text.trim(),
-          "capacityKg": cap,
-        };
+        // Nokta (.) kullanarak sadece ilgili alanları güncelliyoruz.
+        // Böylece 'kycStatus' (onay durumu) silinmez.
+        update["extra.vehicleType"] = vehicleType;
+        update["extra.plate"] = plateCtrl.text.trim();
+        update["extra.capacityKg"] = cap;
       }
 
       await db.collection("users").doc(uid).update(update);
@@ -368,6 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 10),
 
+
                       TextField(
                         controller: cityCtrl,
                         decoration: const InputDecoration(labelText: "Şehir"),
@@ -449,6 +461,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: const Text("E-posta Değiştir"),
                       subtitle: const Text("Hesap e-postasını güncelle"),
                       onTap: _changeEmail,
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: Icon(
+                          Icons.verified_user,
+                          // kycStatus 'approved' ise YEŞİL, değilse MAVİ yap:
+                          color: kycStatus == 'approved' ? Colors.green : Colors.blue
+                      ),
+                      title: const Text("Hesap Doğrulama (KYC)"),
+                      subtitle: Text(
+                        // kycStatus 'approved' ise onay yazısı yaz, değilse eskiyi yaz:
+                          kycStatus == 'approved' ? "Hesabınız Onaylandı ✅" : "Ehliyet ve Kimlik Yükle"
+                      ),
+                      trailing: kycStatus == "approved" ? null : const Icon(Icons.chevron_right),
+                      onTap: kycStatus == "approved"
+                          ? null
+                          : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const KycScreen()),
+                        );
+                      },
                     ),
                   ],
                 ),
