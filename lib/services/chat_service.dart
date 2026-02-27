@@ -3,14 +3,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatService {
   final _db = FirebaseFirestore.instance;
 
-  String chatIdForLoad(String loadId) => "load_$loadId";
+  // 👇 YENİ: Artık her şoför-ilan eşleşmesi için benzersiz bir oda oluşturuyoruz
+  String getChatId({required String loadId, required String driverId}) {
+    return "load_${loadId}_driver_$driverId";
+  }
 
   Future<void> ensureChat({
     required String loadId,
     required String shipperId,
     required String driverId,
   }) async {
-    final chatId = chatIdForLoad(loadId);
+    // 👇 YENİ: ID'yi yeni fonksiyondan alıyoruz
+    final chatId = getChatId(loadId: loadId, driverId: driverId);
 
     await _db.collection("chats").doc(chatId).set({
       "loadId": loadId,
@@ -18,10 +22,11 @@ class ChatService {
       "driverId": driverId,
       "createdAt": FieldValue.serverTimestamp(),
       "updatedAt": FieldValue.serverTimestamp(),
-      "lastMessage": null,
+      "lastMessage": null, // (Mevcutsa üstüne yazmaz, merge: true var)
     }, SetOptions(merge: true));
   }
 
+  // ... (messages ve send fonksiyonları eskisi gibi kalacak, dokunma)
   Stream<QuerySnapshot<Map<String, dynamic>>> messages(String chatId) {
     return _db
         .collection("chats")

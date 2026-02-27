@@ -124,12 +124,29 @@ class _LoadDetailScreenState extends State<LoadDetailScreen> {
           TextField(
             controller: priceCtrl,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: "Teklif (₺)"),
+            decoration: const InputDecoration(
+              labelText: "Teklifiniz (₺)",
+              prefixIcon: Icon(Icons.local_offer_outlined),
+            ),
           ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: noteCtrl,
-            decoration: const InputDecoration(labelText: "Not (opsiyonel)"),
+          const SizedBox(height: 8),
+
+          // YENİ BİLGİLENDİRME MESAJI
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Yük sahibiyle sohbete başlamak ve detayları konuşmak için önce teklif göndermelisiniz.",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 

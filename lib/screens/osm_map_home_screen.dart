@@ -14,6 +14,7 @@ import '../app_state.dart';
 import '../models/load.dart';
 import '../models/offer.dart';
 import '../services/OfferService.dart';
+import '../services/chat_service.dart';
 import 'offers_inbox_screen.dart';
 import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
@@ -557,13 +558,16 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                   TextField(
                                     controller: priceCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(labelText: "Teklif (₺)"),
+                                    decoration: const InputDecoration(
+                                      labelText: "Teklifiniz (₺)",
+                                      prefixIcon: Icon(Icons.local_offer_outlined),
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
-                                  TextField(
-                                    controller: noteCtrl,
-                                    decoration: const InputDecoration(labelText: "Not (opsiyonel)"),
-                                  ),
+
+                                  // YENİ BİLGİLENDİRME MESAJI
+
+                                  const SizedBox(height: 12),
                                   const SizedBox(height: 12),
                                   FilledButton.icon(
                                     icon: const Icon(Icons.send),
@@ -748,7 +752,83 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
+// YENİ EKLENEN ŞOFÖR SOHBET BUTONU
+                  // 🟢 AKILLI SOHBET / BİLGİ ALANI
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection("offers")
+                        .where("loadId", isEqualTo: l.id)
+                        .where("driverId", isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .snapshots(),
+                    builder: (context, snap) {
+                      final hasOffer = snap.hasData && snap.data!.docs.isNotEmpty;
 
+                      // EĞER TEKLİF VERMİŞSE -> SOHBET BUTONU ÇIKSIN
+                      if (hasOffer) {
+                        return Column(
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                                  final shipperId = l.shipperId ?? "";
+                                  if (uid == null || shipperId.isEmpty) return;
+
+                                  final chatSvc = ChatService();
+                                  final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
+                                  await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
+
+                                  if (!context.mounted) return;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                                  );
+                                },
+                                icon: const Icon(Icons.chat),
+                                label: const Text("Yük Sahibi ile Mesajlaş"),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      }
+                      // EĞER TEKLİF VERMEMİŞSE -> BİLGİLENDİRME YAZISI ÇIKSIN
+                      else {
+                        return Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.lock_outline, size: 20, color: Theme.of(context).colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "Yük sahibiyle sohbete başlamak için önce teklif göndermelisiniz.",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                  // 🟢 AKILLI ALAN BİTİŞİ
+                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
                     height: 46,

@@ -192,32 +192,7 @@ class _LoadOffersCard extends StatelessWidget {
               style: TextStyle(color: cs.onSurfaceVariant),
             ),
 
-            if (load.status == "matched") ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.chat_bubble_outline),
-                  label: const Text("Sohbet"),
-                  onPressed: () {
-                    final chatId = "load_${load.id}";
 
-                    // Hızlı debug: basınca gerçekten tetikleniyor mu?
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Sohbet açılıyor: $chatId")),
-                    );
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text("Durum: Eşleşti ✅", style: TextStyle(fontWeight: FontWeight.w800)),
-            ],
 
             if (load.status == "delivered_pending")
               Padding(
@@ -447,7 +422,26 @@ class _LoadOffersCard extends StatelessWidget {
                                       ],
                                     ),
                                   ),
+// YENİ EKLENEN SOHBET İKONU
+                                  IconButton(
+                                    tooltip: "Şoförle Mesajlaş",
+                                    icon: const Icon(Icons.chat, color: Colors.blue),
+                                    onPressed: () async {
+                                      final shipperId = load.shipperId ?? "";
+                                      if (shipperId.isEmpty) return;
 
+                                      final chatSvc = ChatService();
+                                      final chatId = chatSvc.getChatId(loadId: load.id, driverId: o.driverId);
+
+                                      await chatSvc.ensureChat(loadId: load.id, shipperId: shipperId, driverId: o.driverId);
+
+                                      if (!context.mounted) return;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                                      );
+                                    },
+                                  ),
                                   const SizedBox(width: 6),
 
                                   // ✅ BURASI DOĞRU YER
@@ -751,7 +745,9 @@ class _LoadOffersCard extends StatelessWidget {
 
     final othersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
 
-    final chatId = chatSvc.chatIdForLoad(loadId);
+    // İlan zaten eşleşmişse, şoförün ID'sini load.acceptedDriverId üzerinden alırız
+    final driverId = load.acceptedDriverId ?? "";
+    final chatId = chatSvc.getChatId(loadId: load.id, driverId: driverId);
     final chatRef = db.collection("chats").doc(chatId);
 
     final batch = db.batch();
