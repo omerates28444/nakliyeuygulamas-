@@ -6,6 +6,8 @@ import '../models/load.dart';
 import '../models/offer.dart';
 import '../app_state.dart';
 import 'load_create_screen.dart';
+import '../services/chat_service.dart';
+import 'chat_screen.dart';
 
 class OffersInboxScreen extends StatelessWidget {
   final ScrollController? controller;
@@ -190,11 +192,32 @@ class _LoadOffersCard extends StatelessWidget {
               style: TextStyle(color: cs.onSurfaceVariant),
             ),
 
-            if (load.status == "matched")
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text("Durum: Eşleşti ✅", style: TextStyle(fontWeight: FontWeight.w800)),
+            if (load.status == "matched") ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text("Sohbet"),
+                  onPressed: () {
+                    final chatId = "load_${load.id}";
+
+                    // Hızlı debug: basınca gerçekten tetikleniyor mu?
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Sohbet açılıyor: $chatId")),
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                    );
+                  },
+                ),
               ),
+              const SizedBox(height: 6),
+              const Text("Durum: Eşleşti ✅", style: TextStyle(fontWeight: FontWeight.w800)),
+            ],
 
             if (load.status == "delivered_pending")
               Padding(
@@ -615,6 +638,7 @@ class _LoadOffersCard extends StatelessWidget {
                                                 loadId: load.id,
                                                 offerId: o.id,
                                                 driverId: o.driverId,
+                                                shipperId: load.shipperId ?? "",
                                               );
 
                                               if (!context.mounted) return;
@@ -702,13 +726,33 @@ class _LoadOffersCard extends StatelessWidget {
     required String loadId,
     required String offerId,
     required String driverId,
+    required String shipperId,
   }) async {
     final db = FirebaseFirestore.instance;
+
+    // ✅ shipperId boş gelirse loads/{loadId} içinden çek
+    String realShipperId = shipperId.trim();
+    if (realShipperId.isEmpty) {
+      final loadSnap = await db.collection("loads").doc(loadId).get();
+      final s = loadSnap.data()?["shipperId"];
+      if (s is String && s.trim().isNotEmpty) {
+        realShipperId = s.trim();
+      }
+    }
+
+    if (realShipperId.isEmpty) {
+      throw Exception("shipperId bulunamadı. loads/$loadId içinde shipperId olmalı.");
+    }
+
+    final chatSvc = ChatService();
 
     final loadRef = db.collection("loads").doc(loadId);
     final offerRef = db.collection("offers").doc(offerId);
 
     final othersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
+
+    final chatId = chatSvc.chatIdForLoad(loadId);
+    final chatRef = db.collection("chats").doc(chatId);
 
     final batch = db.batch();
 
@@ -716,6 +760,7 @@ class _LoadOffersCard extends StatelessWidget {
       "acceptedOfferId": offerId,
       "acceptedDriverId": driverId,
       "status": "matched",
+      "chatId": chatId,
     });
 
     batch.update(offerRef, {"status": "accepted"});
@@ -724,6 +769,15 @@ class _LoadOffersCard extends StatelessWidget {
       if (d.id == offerId) continue;
       batch.update(d.reference, {"status": "rejected"});
     }
+
+    batch.set(chatRef, {
+      "loadId": loadId,
+      "shipperId": realShipperId,
+      "driverId": driverId,
+      "createdAt": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
+      "lastMessage": null,
+    }, SetOptions(merge: true));
 
     await batch.commit();
   }

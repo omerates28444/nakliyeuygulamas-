@@ -12,6 +12,7 @@ class Load {
   final double? fromLat;
   final double? fromLng;
   final String? deliveryPhotoUrl;
+  final String? chatId;
 
   // ✅ yeni alanlar
   final String? shipperId;
@@ -35,6 +36,7 @@ class Load {
     this.acceptedOfferId,
     this.acceptedDriverId,
     this.deliveryPhotoUrl,
+    this.chatId,
   });
 
   // ✅ Firestore -> Load
@@ -56,6 +58,7 @@ class Load {
       acceptedOfferId: d['acceptedOfferId']?.toString(),
       acceptedDriverId: d['acceptedDriverId']?.toString(),
       deliveryPhotoUrl: d['deliveryPhotoUrl']?.toString(),
+      chatId: d['chatId']?.toString(),
     );
   }
 
@@ -76,6 +79,7 @@ class Load {
       'acceptedOfferId': acceptedOfferId,
       'acceptedDriverId': acceptedDriverId,
       'deliveryPhotoUrl': deliveryPhotoUrl,
+      'chatId': chatId,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
@@ -94,6 +98,7 @@ class Load {
     String? acceptedOfferId,
     String? acceptedDriverId,
     String? deliveryPhotoUrl,
+    String? chatId,
   }) {
     return Load(
       id: id ?? this.id,
@@ -109,6 +114,7 @@ class Load {
       acceptedOfferId: acceptedOfferId ?? this.acceptedOfferId,
       acceptedDriverId: acceptedDriverId ?? this.acceptedDriverId,
       deliveryPhotoUrl: deliveryPhotoUrl ?? this.deliveryPhotoUrl,
+      chatId: chatId ?? this.chatId,
     );
   }
 }

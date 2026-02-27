@@ -15,6 +15,9 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // ✅ Flutter local notifications için şart
+        isCoreLibraryDesugaringEnabled = true
+
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -25,7 +28,6 @@ android {
 
     defaultConfig {
         applicationId = "com.omerates.nakliyeyg.nakliyeuyg"
-
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -42,6 +44,9 @@ android {
 dependencies {
     // ✅ Firebase BoM (Android tarafı uyumlu versiyonları yönetir)
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+
+    // ✅ Desugaring dependency (flutter_local_notifications istiyor)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     // (Opsiyonel) Analytics istersen aç:
     // implementation("com.google.firebase:firebase-analytics")

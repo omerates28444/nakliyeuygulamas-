@@ -18,6 +18,7 @@ import 'offers_inbox_screen.dart';
 import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
 import 'profile_screen.dart';
+import 'chat_screen.dart';
 
 class OsmMapHomeScreen extends StatefulWidget {
   const OsmMapHomeScreen({super.key});
@@ -1057,7 +1058,24 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                         style: TextStyle(color: cs.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            // Sohbet odasının ID'si her zaman "load_" + ilan ID'sidir
+                            final chatId = "load_${j.id}";
 
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                            );
+                          },
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          label: const Text("Yük Sahibi ile Sohbet Et"),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(

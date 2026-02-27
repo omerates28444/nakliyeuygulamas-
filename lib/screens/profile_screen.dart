@@ -463,27 +463,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: _changeEmail,
                     ),
                     const Divider(),
-                    ListTile(
-                      leading: Icon(
+                    if (appState.role == "driver")
+                      ListTile(
+                        leading: Icon(
                           Icons.verified_user,
-                          // kycStatus 'approved' ise YEŞİL, değilse MAVİ yap:
-                          color: kycStatus == 'approved' ? Colors.green : Colors.blue
+                          color: kycStatus == 'approved' ? Colors.green : Colors.blue,
+                        ),
+                        title: const Text("Hesap Doğrulama (KYC)"),
+                        subtitle: Text(
+                          kycStatus == 'approved'
+                              ? "Hesabınız Onaylandı ✅"
+                              : "Ehliyet ve Kimlik Yükle",
+                        ),
+                        trailing: kycStatus == "approved"
+                            ? null
+                            : const Icon(Icons.chevron_right),
+                        onTap: kycStatus == "approved"
+                            ? null
+                            : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const KycScreen()),
+                          );
+                        },
                       ),
-                      title: const Text("Hesap Doğrulama (KYC)"),
-                      subtitle: Text(
-                        // kycStatus 'approved' ise onay yazısı yaz, değilse eskiyi yaz:
-                          kycStatus == 'approved' ? "Hesabınız Onaylandı ✅" : "Ehliyet ve Kimlik Yükle"
-                      ),
-                      trailing: kycStatus == "approved" ? null : const Icon(Icons.chevron_right),
-                      onTap: kycStatus == "approved"
-                          ? null
-                          : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const KycScreen()),
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),

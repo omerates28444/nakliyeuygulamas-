@@ -6,10 +6,13 @@ import 'app_state.dart';
 import 'screens/role_select_screen.dart';
 import 'screens/app_shell.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await NotificationService.init();
+
   runApp(const MyApp());
 }
 
@@ -32,6 +35,7 @@ class MyApp extends StatelessWidget {
 
     appState.setRole(role);
     appState.login(name: name);
+    await NotificationService.syncTokenToUser();
   }
 
   @override
