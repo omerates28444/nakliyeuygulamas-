@@ -20,6 +20,7 @@ import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
 import 'profile_screen.dart';
 import 'chat_screen.dart';
+import 'chats_list_screen.dart';
 
 class OsmMapHomeScreen extends StatefulWidget {
   const OsmMapHomeScreen({super.key});
@@ -754,79 +755,31 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                   ],
 // YENİ EKLENEN ŞOFÖR SOHBET BUTONU
                   // 🟢 AKILLI SOHBET / BİLGİ ALANI
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection("offers")
-                        .where("loadId", isEqualTo: l.id)
-                        .where("driverId", isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                        .snapshots(),
-                    builder: (context, snap) {
-                      final hasOffer = snap.hasData && snap.data!.docs.isNotEmpty;
+                  // STANDART SOHBET BUTONU
+                  SizedBox(
+                    width: double.infinity,
+                    height: 46,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final uid = FirebaseAuth.instance.currentUser?.uid;
+                        final shipperId = l.shipperId ?? "";
+                        if (uid == null || shipperId.isEmpty) return;
 
-                      // EĞER TEKLİF VERMİŞSE -> SOHBET BUTONU ÇIKSIN
-                      if (hasOffer) {
-                        return Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  final uid = FirebaseAuth.instance.currentUser?.uid;
-                                  final shipperId = l.shipperId ?? "";
-                                  if (uid == null || shipperId.isEmpty) return;
+                        final chatSvc = ChatService();
+                        final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
+                        await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
 
-                                  final chatSvc = ChatService();
-                                  final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
-                                  await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
-
-                                  if (!context.mounted) return;
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
-                                  );
-                                },
-                                icon: const Icon(Icons.chat),
-                                label: const Text("Yük Sahibi ile Mesajlaş"),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                          ],
+                        if (!context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
                         );
-                      }
-                      // EĞER TEKLİF VERMEMİŞSE -> BİLGİLENDİRME YAZISI ÇIKSIN
-                      else {
-                        return Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.lock_outline, size: 20, color: Theme.of(context).colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      "Yük sahibiyle sohbete başlamak için önce teklif göndermelisiniz.",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                        );
-                      }
-                    },
+                      },
+                      icon: const Icon(Icons.chat),
+                      label: const Text("Yük Sahibi ile Mesajlaş"),
+                    ),
                   ),
+                  const SizedBox(height: 10),
                   // 🟢 AKILLI ALAN BİTİŞİ
                   const SizedBox(height: 10),
                   SizedBox(
@@ -988,6 +941,17 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                       if (_locLoading) _pill(icon: Icons.gps_fixed, text: "GPS…"),
                       if (!_locLoading && _pos == null) _pill(icon: Icons.gps_off, text: "GPS yok"),
                       const SizedBox(width: 10),
+                      // Profil butonunun hemen yanına eklenecek Mesajlar Butonu
+                      IconButton(
+                        icon: const Icon(Icons.message_outlined),
+                        tooltip: "Mesajlarım",
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ChatsListScreen()),
+                          );
+                        },
+                      ),
                       IconButton.filledTonal(
                         tooltip: "Profil",
                         onPressed: () {
