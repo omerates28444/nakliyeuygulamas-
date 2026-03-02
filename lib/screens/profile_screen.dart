@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../services/auth_service.dart';
 import '../models/load.dart';
-import '../app_state.dart';
+// import '../app_state.dart'; // (Aynı import iki kere yazılmıştı, birini sildim)
 import 'role_select_screen.dart';
 import 'kyc_screen.dart';
 
@@ -20,11 +20,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late Future<void> _profileFuture;
   final auth = AuthService();
   final db = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
     _profileFuture = _loadProfile();
   }
+
   bool saving = false;
 
   final nameCtrl = TextEditingController();
@@ -38,8 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String vehicleType = "Kamyonet";
   String kycStatus = "none"; // Durumu saklamak için yeni değişken
 
-
-
   @override
   void dispose() {
     nameCtrl.dispose();
@@ -52,10 +52,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _snack(String msg) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
   Future<bool> _reauthWithPassword(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
@@ -160,7 +160,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (cap == null || cap <= 0) throw Exception("Kapasite geçerli olmalı");
 
         // Nokta (.) kullanarak sadece ilgili alanları güncelliyoruz.
-        // Böylece 'kycStatus' (onay durumu) silinmez.
         update["extra.vehicleType"] = vehicleType;
         update["extra.plate"] = plateCtrl.text.trim();
         update["extra.capacityKg"] = cap;
@@ -252,9 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!okReauth) return;
 
       await FirebaseAuth.instance.currentUser!.verifyBeforeUpdateEmail(newEmail);
-
-
-
       _snack("Doğrulama maili gönderildi ✅ Mailden onaylayınca e-posta değişir.");
     } catch (e) {
       _snack("E-posta değiştirilemedi: $e");
@@ -267,15 +263,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (uid == null) return const Center(child: Text("Oturum yok."));
 
     final isDriver = appState.role == "driver";
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profil"),
+        title: const Text("Profilim", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
           IconButton(
             tooltip: "Çıkış Yap",
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
@@ -288,6 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: const Text("Vazgeç"),
                     ),
                     FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
                       onPressed: () => Navigator.pop(context, true),
                       child: const Text("Çıkış Yap"),
                     ),
@@ -316,95 +316,139 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snap.hasError) {
-            return const Center(child: Text("Profil yüklenemedi"));
-          }
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
+              // 🟢 1. YENİ ŞIK PROFİL BAŞLIĞI VE PUAN KARTI
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance.collection("users").doc(uid).snapshots(),
+                builder: (context, userSnap) {
+                  final d = userSnap.data?.data() ?? {};
+                  final avg = (d["ratingAvg"] is num) ? (d["ratingAvg"] as num).toDouble() : 5.0; // Varsayılan 5.0
+                  final cnt = (d["ratingCount"] is int) ? d["ratingCount"] as int : 0;
 
-              // 🔹 PROFİL KARTI
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
+                  // ✅ DÜZELTİLMİŞ İSİM KONTROLÜ (Parantez sorunu çözüldü)
+                  String displayName = "İsimsiz";
+                  if (d["name"] != null && d["name"].toString().trim().isNotEmpty) {
+                    displayName = d["name"].toString();
+                  } else if (nameCtrl.text.isNotEmpty) {
+                    displayName = nameCtrl.text;
+                  }
 
-                      FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                        future: FirebaseFirestore.instance
-                            .collection("users")
-                            .doc(AuthService().currentUser?.uid)
-                            .get(),
-                        builder: (context, snap) {
-                          final d = snap.data?.data() ?? {};
-                          final avg = (d["ratingAvg"] is num) ? (d["ratingAvg"] as num).toDouble() : 0.0;
-                          final cnt = (d["ratingCount"] is int) ? d["ratingCount"] as int : 0;
+                  final email = auth.currentUser?.email ?? "";
+                  final firstLetter = displayName.toString().isNotEmpty ? displayName.toString().substring(0, 1).toUpperCase() : "?";
 
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.star, size: 18),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "${avg.toStringAsFixed(1)}  •  $cnt değerlendirme",
-                                    style: const TextStyle(fontWeight: FontWeight.w900),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                          Theme.of(context).colorScheme.primary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: "Ad Soyad"),
-                      ),
-
-                      TextField(
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(labelText: "Telefon"),
-                      ),
-                      const SizedBox(height: 10),
-
-
-                      TextField(
-                        controller: cityCtrl,
-                        decoration: const InputDecoration(labelText: "Şehir"),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      if (appState.role == "driver") ...[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6, bottom: 8),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Araç Bilgileri",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Colors.white,
+                          child: Text(
+                            firstLetter,
+                            style: TextStyle(
+                              fontSize: 28,
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                email,
+                                style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8)),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 18),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "${avg.toStringAsFixed(1)} ($cnt Puan)",
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
 
+              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 8),
+                child: Text("Kişisel Bilgiler", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+
+              // 🟢 2. SENİN YAZDIĞIN PROFİL DÜZENLEME FORMU
+              Card(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                elevation: 1,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: const InputDecoration(labelText: "Ad Soyad", prefixIcon: Icon(Icons.person_outline)),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(labelText: "Telefon", prefixIcon: Icon(Icons.phone_outlined)),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: cityCtrl,
+                        decoration: const InputDecoration(labelText: "Şehir", prefixIcon: Icon(Icons.location_city_outlined)),
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (isDriver) ...[
+                        const Divider(height: 30),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text("Araç Bilgileri", style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
                           value: vehicleType,
-                          decoration: const InputDecoration(labelText: "Araç tipi"),
+                          decoration: const InputDecoration(labelText: "Araç tipi", prefixIcon: Icon(Icons.local_shipping_outlined)),
                           items: const [
                             DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
                             DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
@@ -414,28 +458,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onChanged: (v) => setState(() => vehicleType = v ?? "Kamyonet"),
                         ),
                         const SizedBox(height: 10),
-
                         TextField(
                           controller: plateCtrl,
-                          decoration: const InputDecoration(labelText: "Plaka"),
+                          decoration: const InputDecoration(labelText: "Plaka", prefixIcon: Icon(Icons.pin_outlined)),
                         ),
                         const SizedBox(height: 10),
-
                         TextField(
                           controller: capacityCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: "Kapasite (kg)"),
+                          decoration: const InputDecoration(labelText: "Kapasite (kg)", prefixIcon: Icon(Icons.scale_outlined)),
                         ),
                       ],
 
-                      const SizedBox(height: 12),
-
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
+                        height: 48,
                         child: FilledButton.icon(
                           onPressed: _saveProfile,
                           icon: const Icon(Icons.save),
-                          label: const Text("Bilgileri Kaydet"),
+                          label: const Text("Bilgileri Kaydet", style: TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
@@ -443,41 +485,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 8),
+                child: Text("Hesap Ayarları", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
 
-              // 🔹 ŞİFRE + EMAIL
+              // 🟢 3. SENİN YAZDIĞIN ŞİFRE, EMAIL VE KYC AYARLARI
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                elevation: 1,
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.lock),
+                      leading: const Icon(Icons.lock_outline),
                       title: const Text("Şifre Değiştir"),
-                      subtitle: const Text("Yeni şifre belirle"),
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: _changePassword,
                     ),
+                    const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.alternate_email),
                       title: const Text("E-posta Değiştir"),
-                      subtitle: const Text("Hesap e-postasını güncelle"),
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: _changeEmail,
                     ),
-                    const Divider(),
-                    if (appState.role == "driver")
+                    if (isDriver) ...[
+                      const Divider(height: 1),
                       ListTile(
                         leading: Icon(
-                          Icons.verified_user,
-                          color: kycStatus == 'approved' ? Colors.green : Colors.blue,
+                          Icons.verified_user_outlined,
+                          color: kycStatus == 'approved' ? Colors.green : Colors.orange,
                         ),
                         title: const Text("Hesap Doğrulama (KYC)"),
                         subtitle: Text(
                           kycStatus == 'approved'
                               ? "Hesabınız Onaylandı ✅"
                               : "Ehliyet ve Kimlik Yükle",
+                          style: TextStyle(color: kycStatus == 'approved' ? Colors.green : Colors.orange),
                         ),
-                        trailing: kycStatus == "approved"
-                            ? null
-                            : const Icon(Icons.chevron_right),
+                        trailing: kycStatus == "approved" ? null : const Icon(Icons.chevron_right),
                         onTap: kycStatus == "approved"
                             ? null
                             : () {
@@ -487,65 +534,114 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
+                    ],
                   ],
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 8),
+                child: Text("Geçmiş İşlerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
 
-              // 🔹 GEÇMİŞ İŞLER
-              const Text("Geçmiş İşler", style: TextStyle(fontWeight: FontWeight.bold)),
-
-              const SizedBox(height: 8),
-
+              // 🟢 4. GEÇMİŞ İŞLER (Senin sorgun + Benim şık kart tasarımım)
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection("loads")
-                    .where(appState.role == "driver" ? "acceptedDriverId" : "shipperId",
-                    isEqualTo: AuthService().currentUser?.uid)
+                    .where(isDriver ? "acceptedDriverId" : "shipperId", isEqualTo: uid)
                     .where("status", isEqualTo: "done")
                     .orderBy("doneAt", descending: true)
                     .snapshots(),
                 builder: (context, snap) {
-                  if (snap.hasError) return Text("Hata: ${snap.error}");
-                  if (!snap.hasData) return const SizedBox();
+                  if (snap.hasError) return Center(child: Text("Hata: ${snap.error}"));
+                  if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
-                  final jobs = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+                  final jobsDoc = snap.data?.docs ?? [];
 
-                  if (jobs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
+                  if (jobsDoc.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(16)
+                      ),
+                      child: Column(
                         children: [
-                          Icon(Icons.history, color: Theme.of(context).colorScheme.outline),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Henüz tamamlanan iş yok.",
-                            style: TextStyle(color: Theme.of(context).colorScheme.outline),
-                          ),
+                          Icon(Icons.history, size: 40, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text("Henüz tamamlanan iş yok.", style: TextStyle(color: Colors.grey.shade600)),
                         ],
                       ),
                     );
                   }
 
                   return Column(
-                    children: jobs.map((j) {
+                    children: jobsDoc.map((d) {
+                      final data = d.data();
+                      final fromCity = data["fromCity"] ?? "Bilinmiyor";
+                      final toCity = data["toCity"] ?? "Bilinmiyor";
+                      final weight = data["weightKg"] ?? "0";
+
+                      // Tarihi formatlama (Eğer doneAt varsa)
+                      String dateStr = "";
+                      final doneAt = data["doneAt"] as Timestamp?;
+                      if (doneAt != null) {
+                        final dt = doneAt.toDate();
+                        dateStr = "${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}";
+                      }
+
                       return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         child: ListTile(
-                          title: Text("${j.fromCity} → ${j.toCity}"),
-                          subtitle: Text("${j.weightKg} kg"),
-                          trailing: const Icon(Icons.check_circle, color: Colors.green),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor: isDriver ? Colors.orange.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                            child: Icon(
+                              isDriver ? Icons.local_shipping : Icons.outbox,
+                              color: isDriver ? Colors.orange : Colors.blue,
+                            ),
+                          ),
+                          title: Text("$fromCity ➔ $toCity", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              isDriver ? "Yük Taşıdınız • $weight kg" : "Yük Gönderdiniz • $weight kg",
+                              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            ),
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  "Tamamlandı",
+                                  style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              if (dateStr.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(dateStr, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                              ]
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),
                   );
                 },
               ),
-
-              const SizedBox(height: 12),
-
-              // 🔴 ÇIKIŞ BUTONU
-
             ],
           );
         },
