@@ -343,7 +343,7 @@ class _LoadOffersCard extends StatelessWidget {
                         case "rejected":
                           return "Reddedildi";
                         case "driver_rejected_counter":
-                          return "Şoför karşı teklifi reddetti";
+                          return "Şoför Reddetti"; // 🟢 DAHA KISA VE ŞIK
                         case "countered":
                           return "Karşı teklif";
                         default:
@@ -355,8 +355,9 @@ class _LoadOffersCard extends StatelessWidget {
                     final isFixed = load.priceType == "fixed";
 
                     // ✅ sabitte "Karşı Teklif" kapalı (istersen kaldırma, böyle daha doğru)
-                    final canAct = (!isFixed && !acceptedAlready && (o.status == "sent" || o.status == "countered"));
-                    final canAccept = (!acceptedAlready && (o.status == "sent" || o.status == "countered"));
+                    // 🟢 YENİ HALİ: Şoför reddetse bile yük sahibi tekrar aksiyon alabilir!
+                    final canAct = (!isFixed && !acceptedAlready && (o.status == "sent" || o.status == "countered" || o.status == "driver_rejected_counter"));
+                    final canAccept = (!acceptedAlready && (o.status == "sent" || o.status == "countered" || o.status == "driver_rejected_counter"));
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
@@ -400,26 +401,33 @@ class _LoadOffersCard extends StatelessWidget {
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: statusColor(o.status)),
-                                      color: statusColor(o.status).withOpacity(0.12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(statusIcon(o.status), size: 16, color: statusColor(o.status)),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          statusLabel(o.status),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            color: statusColor(o.status),
+                                  // 🟢 FLEXIBLE EKLENDİ VE METİN TAŞMASI ENGELLENDİ
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(999),
+                                        border: Border.all(color: statusColor(o.status)),
+                                        color: statusColor(o.status).withOpacity(0.12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(statusIcon(o.status), size: 14, color: statusColor(o.status)),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              statusLabel(o.status),
+                                              overflow: TextOverflow.ellipsis, // 🟢 ÇOK UZUNSA NOKTA NOKTA YAPAR (...)
+                                              style: TextStyle(
+                                                fontSize: 12, // 🟢 YER KAPLAMAMASI İÇİN BİRAZ KÜÇÜLTÜLDÜ
+                                                fontWeight: FontWeight.w800,
+                                                color: statusColor(o.status),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
 // YENİ EKLENEN SOHBET İKONU
@@ -583,7 +591,8 @@ class _LoadOffersCard extends StatelessWidget {
                                         child: SizedBox(
                                           height: 44,
                                           child: OutlinedButton.icon(
-                                            onPressed: (!acceptedAlready && (o.status == "sent" || o.status == "countered"))
+                                            // 🟢 Şoför reddettiği durumda bile teklifi tamamen listeden silebilmek için
+                                            onPressed: (!acceptedAlready && (o.status == "sent" || o.status == "countered" || o.status == "driver_rejected_counter"))
                                                 ? () async {
                                               final ok = await showDialog<bool>(
                                                 context: context,

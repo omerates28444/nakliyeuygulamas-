@@ -693,51 +693,136 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                     if (counter != null) ...[
                                       const SizedBox(height: 12),
                                       const Divider(),
-                                      Text(
-                                        "Yük sahibinin karşı teklifi",
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+
+                                      // 🟢 1. KARŞI TEKLİF BİLGİSİ
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Yük Sahibinin Teklifi",
+                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                          ),
+                                          _statusChip("$counter ₺", icon: Icons.payments_outlined),
+                                        ],
                                       ),
-                                      const SizedBox(height: 6),
-                                      _statusChip("$counter ₺", icon: Icons.payments_outlined),
                                       if (counterNote.isNotEmpty) ...[
                                         const SizedBox(height: 6),
                                         Text("Not: $counterNote", style: Theme.of(context).textTheme.bodySmall),
                                       ],
+
+                                      const SizedBox(height: 16),
+                                      const Text("Teklif Ver", style: TextStyle(fontWeight: FontWeight.w800)),
+                                      const SizedBox(height: 8),
+
+                                      // 🟢 2. SENİN ATTIĞIN TASARIMDAKİ FİYAT KUTUSU
+                                      TextField(
+                                        controller: priceCtrl,
+                                        keyboardType: TextInputType.number,
+                                        decoration: InputDecoration(
+                                          labelText: "Farklı bir teklifiniz var mı? (₺)",
+                                          prefixIcon: const Icon(Icons.local_offer_outlined),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          isDense: true,
+                                        ),
+                                      ),
+
                                       const SizedBox(height: 12),
+
+                                      // 🟢 3. YAN YANA AKSİYON BUTONLARI (Kabul, Reddet, Gönder)
                                       Row(
                                         children: [
+                                          // ✅ KABUL ET (Yeşil)
                                           Expanded(
                                             child: FilledButton(
-                                            onPressed: canRespondToCounter
-                                            ? () async {
-                            try {
-                              await OfferService().acceptCounterOffer(l, myOffer);
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                            _snack("Karşı teklif kabul edildi ✅");
-                            } catch (e) {
-                            _snack("Kabul hatası: $e");
-                            }
-                            }
-                                : null,
-                                              child: const Text("Kabul Et"),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                                padding: const EdgeInsets.symmetric(horizontal: 2), // Ekrana sığması için daraltıldı
+                                              ),
+                                              onPressed: canRespondToCounter
+                                                  ? () async {
+                                                try {
+                                                  await OfferService().acceptCounterOffer(l, myOffer);
+                                                  if (!mounted) return;
+                                                  Navigator.pop(context);
+                                                  _snack("Karşı teklif kabul edildi ✅");
+                                                } catch (e) {
+                                                  _snack("Kabul hatası: $e");
+                                                }
+                                              }
+                                                  : null,
+                                              child: const Text("Kabul Et", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
+                                          const SizedBox(width: 6),
+
+                                          // ❌ REDDET (Kırmızı Çerçeveli)
                                           Expanded(
                                             child: OutlinedButton(
-                            onPressed: canRespondToCounter
-                            ? () async {
-                            try {
-                              await OfferService().acceptCounterOffer(l, myOffer);
-                            if (!mounted) return;
-                            _snack("Karşı teklif reddedildi");
-                            } catch (e) {
-                            _snack("Hata: $e");
-                            }
-                            }
-                                : null,
-                                              child: const Text("Reddet"),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                                side: const BorderSide(color: Colors.red),
+                                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                              ),
+                                              onPressed: canRespondToCounter
+                                                  ? () async {
+                                                try {
+                                                  await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
+                                                    "status": "driver_rejected_counter",
+                                                  });
+                                                  if (!mounted) return;
+                                                  _snack("Teklifi reddettiniz.");
+                                                } catch (e) {
+                                                  _snack("Hata: $e");
+                                                }
+                                              }
+                                                  : null,
+                                              child: const Text("Reddet", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+
+                                          // 🚀 YENİ TEKLİF GÖNDER (Ana Renk)
+                                          Expanded(
+                                            child: FilledButton(
+                                              style: FilledButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                              ),
+                                              onPressed: canRespondToCounter
+                                                  ? () async {
+                                                final newPrice = int.tryParse(priceCtrl.text.trim()) ?? 0;
+                                                if (newPrice <= 0) {
+                                                  _snack("Geçerli bir tutar girin.");
+                                                  return;
+                                                }
+
+                                                try {
+                                                  // Eski teklifi iptal et ve yenisini oluştur
+                                                  await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
+                                                    "status": "driver_rejected_counter",
+                                                  });
+
+                                                  final uid2 = FirebaseAuth.instance.currentUser?.uid;
+                                                  await FirebaseFirestore.instance.collection("offers").add({
+                                                    "loadId": l.id,
+                                                    "driverId": uid2,
+                                                    "driverName": appState.displayName,
+                                                    "price": newPrice,
+                                                    "note": "",
+                                                    "status": "sent",
+                                                    "createdAt": FieldValue.serverTimestamp(),
+                                                  });
+
+                                                  if (!mounted) return;
+                                                  Navigator.pop(context);
+                                                  _snack("Yeni teklifiniz iletildi ✅");
+                                                } catch (e) {
+                                                  _snack("Hata: $e");
+                                                }
+                                              }
+                                                  : null,
+                                              child: const Text("Gönder", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                             ),
                                           ),
                                         ],
@@ -942,15 +1027,20 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                       if (!_locLoading && _pos == null) _pill(icon: Icons.gps_off, text: "GPS yok"),
                       const SizedBox(width: 10),
                       // Profil butonunun hemen yanına eklenecek Mesajlar Butonu
-                      IconButton(
-                        icon: const Icon(Icons.message_outlined),
-                        tooltip: "Mesajlarım",
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ChatsListScreen()),
-                          );
-                        },
+                      // 🟢 YENİ VE ŞIK MESAJ İKONU (Profil ikonuyla aynı tasarım)
+                      // 🟢 BİREBİR PROFİL İKONU İLE AYNI GÖRÜNÜM (filledTonal kullanıldı)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton.filledTonal(
+                          tooltip: "Mesajlarım",
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ChatsListScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.chat_bubble_outline_rounded),
+                        ),
                       ),
                       IconButton.filledTonal(
                         tooltip: "Profil",

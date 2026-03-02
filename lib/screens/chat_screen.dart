@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 class ChatScreen extends StatefulWidget {
   final String chatId;
   final String userName;
-  final String? otherUserId; // 🟢 DÜZELTME 1: Soru işareti (?) koyduk. Artık zorunlu değil.
+  final String? otherUserId;
 
   const ChatScreen({
     super.key,
     required this.chatId,
-    this.otherUserId, // 🟢 DÜZELTME 2: 'required' kelimesini sildik.
+    this.otherUserId,
     this.userName = "Sohbet",
   });
 
@@ -22,11 +22,54 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final TextEditingController _msgController = TextEditingController();
   final uid = FirebaseAuth.instance.currentUser?.uid;
 
+  // 🟢 AKILLI SİSTEM DEĞİŞKENLERİ
+  String? _resolvedOtherUserId;
+  String _resolvedUserName = "";
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _setStatus(true);
+
+    // Başlangıçta widget'tan gelenleri al
+    _resolvedOtherUserId = widget.otherUserId;
+    _resolvedUserName = widget.userName;
+
+    // 🟢 EĞER ID GELMEDİYSE (Haritadan girildiyse), KENDİ KENDİNE BUL!
+    if (_resolvedOtherUserId == null) {
+      _resolvedUserName = "Yükleniyor...";
+      _fetchMissingDetails();
+    }
+  }
+
+  // 🟢 AKILLI BULUCU FONKSİYON
+  Future<void> _fetchMissingDetails() async {
+    if (uid == null) return;
+    try {
+      // 1. Önce bu sohbet odasına bak (Kim kiminle konuşuyor?)
+      final chatSnap = await FirebaseFirestore.instance.collection("chats").doc(widget.chatId).get();
+      if (chatSnap.exists) {
+        final data = chatSnap.data()!;
+        final shipperId = data["shipperId"];
+        final driverId = data["driverId"];
+
+        // Karşı tarafın kim olduğunu hesapla (Ben shipper isem o driver'dır)
+        final calculatedOtherId = (uid == shipperId) ? driverId : shipperId;
+
+        // 2. Şimdi gidip o kişinin adını bul
+        final userSnap = await FirebaseFirestore.instance.collection("users").doc(calculatedOtherId).get();
+        if (userSnap.exists && mounted) {
+          setState(() {
+            _resolvedOtherUserId = calculatedOtherId;
+            _resolvedUserName = userSnap.data()?["name"] ?? "Kullanıcı";
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Eksik detaylar bulunamadı: $e");
+      if (mounted) setState(() => _resolvedUserName = "Sohbet");
+    }
   }
 
   @override
@@ -108,11 +151,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        // 🟢 DÜZELTME 3: Eğer otherUserId gelmediyse (Haritadan girildiyse) çökmesin, sadece ismi yazsın.
-        title: widget.otherUserId == null
-            ? Text(widget.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87))
+        // 🟢 ARTIK AKILLI DEĞİŞKENLERİ (_resolvedOtherUserId) KULLANIYORUZ
+        title: _resolvedOtherUserId == null
+            ? Text(_resolvedUserName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87))
             : StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection("users").doc(widget.otherUserId).snapshots(),
+          stream: FirebaseFirestore.instance.collection("users").doc(_resolvedOtherUserId).snapshots(),
           builder: (context, snap) {
             String statusText = "";
             Color statusColor = Colors.grey.shade500;
@@ -128,6 +171,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 statusColor = Colors.green;
               } else if (lastSeen != null) {
                 statusText = "Son görülme: ${_formatLastSeen(lastSeen)}";
+              } else {
+                statusText = "Durum bilinmiyor";
+                statusColor = Colors.grey.shade400;
               }
             }
 
@@ -136,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.userName,
+                  _resolvedUserName,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.black87),
                 ),
                 if (statusText.isNotEmpty)
@@ -158,8 +204,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         iconTheme: const IconThemeData(color: Colors.black87),
         centerTitle: true,
       ),
-
-      // ... AŞAĞISI AYNEN KALACAK (body: Column ile başlayan kısım)
       body: Column(
         children: [
           Expanded(
