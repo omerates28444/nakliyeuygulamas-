@@ -289,28 +289,29 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                         ),
                       ),
 
-                      // 🟢 YÜK SAHİBİYLE MESAJLAŞMA İKONU (YENİ)
-                      IconButton(
-                        tooltip: "Yük Sahibiyle Mesajlaş",
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.chat, color: Colors.blue, size: 28),
-                        onPressed: () async {
-                          final uid = FirebaseAuth.instance.currentUser?.uid;
-                          final shipperId = l.shipperId ?? "";
-                          if (uid == null || shipperId.isEmpty) return;
+                      // 🟢 YÜK SAHİBİYLE MESAJLAŞMA İKONU (SADECE ŞOFÖRLERE GÖSTERİLİR)
+                      if (isDriver)
+                        IconButton(
+                          tooltip: "Yük Sahibiyle Mesajlaş",
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.chat, color: Colors.blue, size: 28),
+                          onPressed: () async {
+                            final uid = FirebaseAuth.instance.currentUser?.uid;
+                            final shipperId = l.shipperId ?? "";
+                            if (uid == null || shipperId.isEmpty) return;
 
-                          final chatSvc = ChatService();
-                          final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
-                          await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
+                            final chatSvc = ChatService();
+                            final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
+                            await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
 
-                          if (!context.mounted) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
-                          );
-                        },
-                      ),
+                            if (!context.mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                            );
+                          },
+                        ),
                       const SizedBox(width: 12),
 
                       _statusChip(
@@ -407,139 +408,126 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                             // ------------------------------------------------------------
                             // ✅ SABİT İLAN: TEKLİF FORMU GÖSTERME -> "ÜCRETİ KABUL ET"
                             // ------------------------------------------------------------
+                            // ------------------------------------------------------------
+                            // ✅ SABİT İLAN: TEKLİF FORMU GÖSTERME -> "ÜCRETİ KABUL ET"
+                            // ------------------------------------------------------------
                             if (isFixed) {
                               // Eğer daha önce kabul ettiyse / zaten matched ise
                               final bool alreadyAcceptedByMe = lastOffer?.status == "accepted";
                               final bool notOpen = l.status != "open"; // marker zaten open gösteriyor ama garanti
 
-                              return Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Sabit Ücret", style: TextStyle(fontWeight: FontWeight.w900)),
-                                      const SizedBox(height: 8),
-                                      _statusChip("$fixedPrice ₺ (Sabit)", icon: Icons.payments_outlined, isOpen: true),
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("Sabit Ücreti Kabul Et", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                  const SizedBox(height: 8),
 
-                                      if (myOffers.isNotEmpty) ...[
-                                        const SizedBox(height: 10),
-                                        const Divider(),
-                                        const Text("Geçmiş İşlemlerin", style: TextStyle(fontWeight: FontWeight.w900)),
-                                        const SizedBox(height: 8),
-                                        ...myOffers.take(3).map((o) {
-                                          final st = o.status;
-                                          final label = st == "rejected"
-                                              ? "Reddedildi"
-                                              : st == "accepted"
-                                              ? "Kabul edildi"
-                                              : st == "countered"
-                                              ? "Karşı teklif"
-                                              : "Beklemede";
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 6),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    "${o.price} ₺ • $label",
-                                                    style: const TextStyle(fontWeight: FontWeight.w700),
-                                                  ),
-                                                ),
-                                                if ((o.note ?? "").trim().isNotEmpty)
-                                                  Text((o.note ?? "").trim(), style: const TextStyle(fontSize: 12)),
-                                              ],
-                                            ),
-                                          );
-                                        }),
-                                        const SizedBox(height: 6),
-                                      ],
-
-                                      const SizedBox(height: 8),
-
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: 46,
-                                        child: FilledButton.icon(
-                                          icon: const Icon(Icons.check_circle_outline),
-                                          label: Text(
-                                            notOpen
-                                                ? "İlan artık uygun değil"
-                                                : (alreadyAcceptedByMe ? "Zaten kabul ettin" : "Ücreti Kabul Et"),
-                                          ),
-                                          onPressed: (uid == null || notOpen || alreadyAcceptedByMe)
-                                              ? null
-                                              : () async {
-                                            try {
-                                              final db = FirebaseFirestore.instance;
-
-                                              // ✅ Sabit ilanı kabul et: teklif oluştur + load'u matched yap (transaction)
-                                              final newOfferRef = db.collection("offers").doc();
-
-                                              await db.runTransaction((tx) async {
-                                                final loadRef = db.collection("loads").doc(l.id);
-
-                                                final loadSnap = await tx.get(loadRef);
-                                                if (!loadSnap.exists) throw Exception("İlan bulunamadı");
-
-                                                final data = loadSnap.data() as Map<String, dynamic>;
-                                                final status = (data["status"] ?? "open").toString();
-                                                final acceptedOfferId = data["acceptedOfferId"];
-
-                                                if (status != "open") {
-                                                  throw Exception("Bu ilan artık uygun değil.");
-                                                }
-                                                if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
-                                                  throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
-                                                }
-
-                                                tx.set(newOfferRef, {
-                                                  "loadId": l.id,
-                                                  "driverId": uid,
-                                                  "driverName": appState.displayName,
-                                                  "price": fixedPrice,
-                                                  "note": "",
-                                                  "status": "accepted",
-                                                  "createdAt": FieldValue.serverTimestamp(),
-                                                });
-
-                                                tx.update(loadRef, {
-                                                  "status": "matched",
-                                                  "acceptedOfferId": newOfferRef.id,
-                                                  "acceptedDriverId": uid,
-                                                });
-                                              });
-
-                                              // ✅ diğer teklifleri reddet
-                                              final others = await db
-                                                  .collection("offers")
-                                                  .where("loadId", isEqualTo: l.id)
-                                                  .get();
-
-                                              final batch = db.batch();
-                                              for (final d in others.docs) {
-                                                if (d.id == newOfferRef.id) continue;
-                                                batch.update(d.reference, {"status": "rejected"});
-                                              }
-                                              await batch.commit();
-
-                                              if (!mounted) return;
-                                              Navigator.pop(context);
-                                              _snack("Sabit ücret kabul edildi ✅");
-                                            } catch (e) {
-                                              _snack("Kabul hatası: $e");
-                                            }
-                                          },
+                                  // 🟢 TEKLİF VER EKRANINDAKİ GİBİ ŞIK GRİ KUTU
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.payments_outlined, color: Colors.grey.shade600),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          "$fixedPrice ₺",
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                                         ),
-                                      ),
-                                    ],
+                                        const Spacer(),
+                                        const Text("Sabit Fiyat", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
                                   ),
-                                ),
+
+                                  const SizedBox(height: 16),
+
+                                  // 🟢 DİĞER EKRANLARLA UYUMLU ŞIK BUTON
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 50,
+                                    child: FilledButton.icon(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(0xFF5A668A),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      icon: const Icon(Icons.check_circle_outline),
+                                      label: Text(
+                                        notOpen
+                                            ? "İlan artık uygun değil"
+                                            : (alreadyAcceptedByMe ? "Zaten kabul ettin" : "Ücreti Kabul Et ve İşi Al"),
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                      onPressed: (uid == null || notOpen || alreadyAcceptedByMe)
+                                          ? null
+                                          : () async {
+                                        try {
+                                          final db = FirebaseFirestore.instance;
+
+                                          // ✅ Sabit ilanı kabul et: teklif oluştur + load'u matched yap (transaction)
+                                          final newOfferRef = db.collection("offers").doc();
+
+                                          await db.runTransaction((tx) async {
+                                            final loadRef = db.collection("loads").doc(l.id);
+
+                                            final loadSnap = await tx.get(loadRef);
+                                            if (!loadSnap.exists) throw Exception("İlan bulunamadı");
+
+                                            final data = loadSnap.data() as Map<String, dynamic>;
+                                            final status = (data["status"] ?? "open").toString();
+                                            final acceptedOfferId = data["acceptedOfferId"];
+
+                                            if (status != "open") {
+                                              throw Exception("Bu ilan artık uygun değil.");
+                                            }
+                                            if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
+                                              throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
+                                            }
+
+                                            tx.set(newOfferRef, {
+                                              "loadId": l.id,
+                                              "driverId": uid,
+                                              "driverName": appState.displayName,
+                                              "price": fixedPrice,
+                                              "note": "",
+                                              "status": "accepted",
+                                              "createdAt": FieldValue.serverTimestamp(),
+                                            });
+
+                                            tx.update(loadRef, {
+                                              "status": "matched",
+                                              "acceptedOfferId": newOfferRef.id,
+                                              "acceptedDriverId": uid,
+                                            });
+                                          });
+
+                                          // ✅ diğer teklifleri reddet
+                                          final others = await db
+                                              .collection("offers")
+                                              .where("loadId", isEqualTo: l.id)
+                                              .get();
+
+                                          final batch = db.batch();
+                                          for (final d in others.docs) {
+                                            if (d.id == newOfferRef.id) continue;
+                                            batch.update(d.reference, {"status": "rejected"});
+                                          }
+                                          await batch.commit();
+
+                                          if (!mounted) return;
+                                          Navigator.pop(context);
+                                          _snack("Sabit ücret kabul edildi ve iş alındı ✅");
+                                        } catch (e) {
+                                          _snack("Kabul hatası: $e");
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
                               );
                             }
 
@@ -1117,125 +1105,155 @@ class _DriverActiveJobsSheet extends StatelessWidget {
               ),
 
             ...jobs.map((j) {
-              final cs = Theme.of(context).colorScheme;
               final isPending = j.status == "delivered_pending";
 
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: BorderSide(color: cs.outlineVariant),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 🟢 İŞ BAŞLIĞI VE İKON (Modern Görünüm)
                       Row(
                         children: [
-                          const Icon(Icons.work_outline),
-                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5A668A).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.local_shipping_outlined, color: Color(0xFF5A668A), size: 22),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              "${j.fromCity} → ${j.toCity}",
-                              style: const TextStyle(fontWeight: FontWeight.w900),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${j.fromCity} → ${j.toCity}",
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${j.weightKg} kg • ${j.priceType == 'fixed' ? '${j.fixedPrice} ₺' : 'Teklif Usulü'}",
+                                  style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ],
                             ),
                           ),
-
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "${j.weightKg} kg • ${j.priceType == 'fixed' ? '${j.fixedPrice} ₺' : 'Teklif'}",
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
+
+                      // 🟢 YÜK SAHİBİ İLE SOHBET (Ana Temayla Uyumlu)
                       SizedBox(
                         width: double.infinity,
-                        height: 44,
+                        height: 48,
                         child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF5A668A),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
                           onPressed: () {
-                            // Sohbet odasının ID'si her zaman "load_" + ilan ID'sidir
                             final chatId = "load_${j.id}";
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
                             );
                           },
                           icon: const Icon(Icons.chat_bubble_outline),
-                          label: const Text("Yük Sahibi ile Sohbet Et"),
+                          label: const Text("Yük Sahibi ile Sohbet Et", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ),
                       const SizedBox(height: 10),
+
+                      // 🟢 YOL TARİFİ VE İŞİ BİTİR (Yan Yana Şık Tasarım)
                       Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final lat = j.fromLat;
-                                final lng = j.fromLng;
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  foregroundColor: Colors.black87,
+                                ),
+                                onPressed: () async {
+                                  final lat = j.fromLat;
+                                  final lng = j.fromLng;
 
-                                if (lat == null || lng == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Bu işin konumu yok.")),
-                                  );
-                                  return;
-                                }
+                                  if (lat == null || lng == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Bu işin konumu yok.")));
+                                    return;
+                                  }
 
-                                final uri = Uri.parse(
-                                  "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
-                                );
-
-                                final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                if (!ok && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Google Maps açılamadı.")),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.directions),
-                              label: const Text("Yol tarifi"),
+                                  // Düzeltilmiş Google Maps Yönlendirme Linki
+                                  final uri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lng");
+                                  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  if (!ok && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Google Maps açılamadı.")));
+                                  }
+                                },
+                                icon: const Icon(Icons.directions, size: 20),
+                                label: const Text("Yol Tarifi", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: FilledButton(
-                              onPressed: isPending
-                                  ? null
-                                  : () async {
-                                try {
-                                  final picker = ImagePicker();
-                                  final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+                            child: SizedBox(
+                              height: 48,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: isPending ? Colors.orange : Colors.green,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: isPending ? null : () async {
+                                  try {
+                                    final picker = ImagePicker();
+                                    final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
 
-                                  if (image == null) return;
+                                    if (image == null) return;
 
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fotoğraf yükleniyor, lütfen bekleyin...")));
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fotoğraf yükleniyor, lütfen bekleyin...")));
+                                    }
+
+                                    final storageRef = FirebaseStorage.instance.ref().child('deliveries/${j.id}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+                                    await storageRef.putFile(File(image.path));
+                                    final downloadUrl = await storageRef.getDownloadURL();
+
+                                    await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
+                                      "status": "delivered_pending",
+                                      "deliveredAt": FieldValue.serverTimestamp(),
+                                      "deliveryPhotoUrl": downloadUrl,
+                                    });
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Teslim kanıtı yüklendi ve bildirildi ✅")));
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
                                   }
-
-                                  final storageRef = FirebaseStorage.instance.ref().child('deliveries/${j.id}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-                                  await storageRef.putFile(File(image.path));
-                                  final downloadUrl = await storageRef.getDownloadURL();
-
-                                  await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
-                                    "status": "delivered_pending",
-                                    "deliveredAt": FieldValue.serverTimestamp(),
-                                    "deliveryPhotoUrl": downloadUrl,
-                                  });
-
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("Teslim kanıtı yüklendi ve bildirildi ✅")),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
-                                }
-                              },
-                              child: Text(isPending ? "Onay bekliyor" : "İşi Bitir"),
+                                },
+                                child: Text(isPending ? "Onay Bekliyor" : "İşi Bitir", style: const TextStyle(fontWeight: FontWeight.bold)),
+                              ),
                             ),
                           ),
                         ],
@@ -1243,9 +1261,16 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
                       const SizedBox(height: 10),
 
+                      // 🟢 İPTAL ET (Hafif Kırmızı Tonlu, Gizli Tehlike Butonu)
                       SizedBox(
                         width: double.infinity,
+                        height: 48,
                         child: FilledButton.tonal(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red.withOpacity(0.08),
+                            foregroundColor: Colors.red.shade700,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
                           onPressed: () async {
                             await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
                               "status": "open",
@@ -1253,10 +1278,7 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                               "acceptedDriverId": FieldValue.delete(),
                             });
 
-                            final offers = await FirebaseFirestore.instance
-                                .collection("offers")
-                                .where("loadId", isEqualTo: j.id)
-                                .get();
+                            final offers = await FirebaseFirestore.instance.collection("offers").where("loadId", isEqualTo: j.id).get();
 
                             final batch = FirebaseFirestore.instance.batch();
                             for (final d in offers.docs) {
@@ -1265,19 +1287,17 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                             await batch.commit();
 
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("İş iptal edildi ✅")),
-                              );
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İş iptal edildi ✅")));
                             }
                           },
-                          child: const Text("İptal Et"),
+                          child: const Text("İptal Et", style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
                   ),
                 ),
               );
-            }),
+            }).toList(),
           ],
         );
       },

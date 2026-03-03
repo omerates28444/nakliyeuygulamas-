@@ -138,6 +138,7 @@ class _LoadOffersCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Başlık + Düzenle + Sil
+            // Başlık + Düzenle + Sil/İptal
             Row(
               children: [
                 Expanded(
@@ -160,48 +161,87 @@ class _LoadOffersCard extends StatelessWidget {
                     },
                   ),
 
-                // 🔴 MEVCUT SİLME BUTONU
-                IconButton(
-                  tooltip: "İlanı Sil",
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  onPressed: (load.status == "matched" || load.status == "delivered_pending" || load.status == "done")
-                      ? null // İlan eşleştiyse silinemez
-                      : () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text("İlan Silinsin mi?"),
-                        content: const Text("Bu ilan ve tüm teklifler kalıcı olarak silinecek."),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text("Vazgeç"),
-                          ),
-                          FilledButton(
-                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Sil"),
-                          ),
-                        ],
-                      ),
-                    );
+                // 🟢 İLAN AÇIKSA "SİL", EŞLEŞTİYSE "İPTAL ET" BUTONU ÇIKSIN
+                if (load.status == "open")
+                  IconButton(
+                    tooltip: "İlanı Sil",
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () async {
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text("İlan Silinsin mi?"),
+                          content: const Text("Bu ilan ve tüm teklifler kalıcı olarak silinecek."),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
+                            FilledButton(
+                              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text("Sil"),
+                            ),
+                          ],
+                        ),
+                      );
 
-                    if (ok == true) {
-                      try {
-                        await _deleteLoadWithOffers(loadId: load.id);
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("İlan silindi ✅")),
-                        );
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Silme hatası: $e")),
-                        );
+                      if (ok == true) {
+                        try {
+                          await _deleteLoadWithOffers(loadId: load.id);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İlan silindi ✅")));
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Silme hatası: $e")));
+                        }
                       }
-                    }
-                  },
-                ),
+                    },
+                  )
+                else if (load.status == "matched")
+                  IconButton(
+                    tooltip: "İşi İptal Et",
+                    icon: const Icon(Icons.cancel_outlined, color: Colors.redAccent),
+                    onPressed: () async {
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text("İşi İptal Et?"),
+                          content: const Text("Şoförle olan anlaşmayı iptal etmek istediğinize emin misiniz?\n\nİlanınız tekrar 'Açık' duruma dönecek ve mevcut teklifler sıfırlanacaktır."),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
+                            FilledButton(
+                              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text("İptal Et"),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (ok == true) {
+                        try {
+                          // 1. İlanı tekrar 'open' yap ve şoförü çıkar
+                          await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
+                            "status": "open",
+                            "acceptedOfferId": FieldValue.delete(),
+                            "acceptedDriverId": FieldValue.delete(),
+                          });
+
+                          // 2. Eski teklifleri temizle ki baştan temiz teklif alabilsin
+                          final offers = await FirebaseFirestore.instance.collection("offers").where("loadId", isEqualTo: load.id).get();
+                          final batch = FirebaseFirestore.instance.batch();
+                          for (final d in offers.docs) {
+                            batch.delete(d.reference);
+                          }
+                          await batch.commit();
+
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İş iptal edildi, ilan tekrar açıldı ✅")));
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("İptal hatası: $e")));
+                        }
+                      }
+                    },
+                  ),
               ],
             ),
 

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../app_state.dart';
 import '../services/auth_service.dart';
+import 'map_picker_screen.dart';
 
 class LoadCreateScreen extends StatefulWidget {
   const LoadCreateScreen({super.key});
@@ -23,6 +24,10 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
   DateTime? _selectedDate;
   String _priceType = "offer";
   bool _isLoading = false;
+
+  // 🟢 EKLENEN KONUM DEĞİŞKENLERİ
+  double? _fromLat;
+  double? _fromLng;
 
   @override
   void dispose() {
@@ -53,6 +58,14 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
       return;
     }
 
+    // Konum seçilmesini zorunlu yapmak istersen bu yorum satırını açabilirsin:
+    /*
+    if (_fromLat == null || _fromLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lütfen haritadan konum seçin.")));
+      return;
+    }
+    */
+
     setState(() => _isLoading = true);
 
     try {
@@ -67,6 +80,8 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
         "pickupDate": Timestamp.fromDate(_selectedDate!),
         "priceType": _priceType,
         "fixedPrice": _priceType == "fixed" ? (int.tryParse(_priceCtrl.text.trim()) ?? 0) : null,
+        "fromLat": _fromLat, // 🟢 KONUM VERİTABANINA YAZILIYOR
+        "fromLng": _fromLng, // 🟢 KONUM VERİTABANINA YAZILIYOR
         "status": "open",
         "createdAt": FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
@@ -155,6 +170,41 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
                 ),
               ),
               Divider(color: Colors.grey.shade300, thickness: 1),
+              const SizedBox(height: 16),
+
+              // 🟢 HARİTADAN KONUM SEÇ BUTONU (YENİDEN EKLENDİ)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF5A668A).withOpacity(0.08),
+                    foregroundColor: const Color(0xFF5A668A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    // 🟢 HARİTA SAYFASINI AÇ VE DÖNEN KONUMU YAKALA
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+                    );
+
+                    // 🟢 EĞER KULLANICI KONUM SEÇİP DÖNDÜYSE DEĞİŞKENLERE KAYDET
+                    if (result != null && result is Map) {
+                      setState(() {
+                        _fromLat = result["lat"];
+                        _fromLng = result["lng"];
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.map_outlined),
+                  label: Text(
+                      _fromLat != null ? "Konum Seçildi ✅" : "Haritadan Konum Seç",
+                      style: const TextStyle(fontWeight: FontWeight.bold)
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 16),
 
               const Text("Fiyat Tipi", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
