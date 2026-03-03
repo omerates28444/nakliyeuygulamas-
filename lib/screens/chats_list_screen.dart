@@ -72,7 +72,7 @@ class ChatsListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = docs[index].data() as Map<String, dynamic>;
               final chatId = docs[index].id;
-              final lastMessage = data["lastMessage"] ?? "Mesaj gönderilmedi";
+              final lastMessage = data["lastMessage"] ?? "Henüz mesaj yok";
 
               final isMeShipper = data["shipperId"] == uid;
 
@@ -191,7 +191,6 @@ class ChatsListScreen extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      // 🟢 Sağ üstte rota bilgisi (Profildeki gibi minimal)
                                       Text(
                                         loadTitle,
                                         style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
@@ -205,11 +204,56 @@ class ChatsListScreen extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: lastMessage == "Mesaj gönderilmedi" ? Colors.grey.shade400 : Colors.grey.shade800,
+                                      color: lastMessage == "Henüz mesaj yok" ? Colors.grey.shade400 : Colors.grey.shade800,
                                     ),
                                   ),
                                 ],
                               ),
+                            ),
+
+                            const SizedBox(width: 4),
+
+                            // 🟢 YENİ EKLENEN: SOHBET SİLME BUTONU
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                              tooltip: "Sohbeti Sil",
+                              onPressed: () async {
+                                final ok = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text("Sohbeti Sil"),
+                                    content: const Text("Bu mesajlaşmayı kalıcı olarak silmek istediğinize emin misiniz?"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: const Text("Vazgeç"),
+                                      ),
+                                      FilledButton(
+                                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: const Text("Sil"),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (ok == true) {
+                                  try {
+                                    // Firebase'den sohbet odasını sil
+                                    await FirebaseFirestore.instance.collection("chats").doc(chatId).delete();
+
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Sohbet başarıyla silindi ✅")),
+                                    );
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text("Silme hatası: $e")),
+                                    );
+                                  }
+                                }
+                              },
                             ),
                             const SizedBox(width: 8),
                             Icon(Icons.chevron_right, color: Colors.grey.shade300),
