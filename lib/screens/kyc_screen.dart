@@ -130,7 +130,13 @@ class _KycScreenState extends State<KycScreen> {
     final loading = _isLoading || _loadingStatus;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Hesap Doğrulama")),
+      appBar: AppBar(
+        title: const Text("Hesap Doğrulama", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : (_kycStatus == "approved")

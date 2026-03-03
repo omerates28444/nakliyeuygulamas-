@@ -380,25 +380,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 email,
                                 style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8)),
                               ),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(10),
+                              // 🟢 SADECE ŞOFÖRSE PUAN GÖSTER, YÜK SAHİBİYSE GİZLE
+                              if (isDriver) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "${avg.toStringAsFixed(1)} ($cnt Puan)",
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.star, color: Colors.amber, size: 18),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${avg.toStringAsFixed(1)} ($cnt Puan)",
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
@@ -642,6 +645,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
+              // 🟢 5. BANA YAPILAN YORUMLAR (Sadece Şoförse Göster)
+              if (isDriver) ...[
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 8),
+                  child: Text("Değerlendirmelerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance.collection("ratings").where("toUserId", isEqualTo: uid).snapshots(),
+                  builder: (context, snap) {
+                    if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+
+                    final docs = snap.data!.docs.toList();
+                    docs.sort((a, b) {
+                      final ta = (a.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+                      final tb = (b.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+                      return tb.compareTo(ta);
+                    });
+
+                    if (docs.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
+                        child: Text("Henüz bir yorum almadınız.", style: TextStyle(color: Colors.grey.shade600)),
+                      );
+                    }
+
+                    return Column(
+                      children: docs.map((d) {
+                        final data = d.data();
+                        final stars = data["stars"] ?? 5;
+                        final note = data["note"] ?? "";
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            title: Row(
+                              children: List.generate(5, (i) => Icon(
+                                i < stars ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 18,
+                              )),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(note.toString().trim().isEmpty ? "Yorum yapılmadı." : "❝ $note ❞", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade800)),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
             ],
           );
         },

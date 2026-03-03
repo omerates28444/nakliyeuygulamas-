@@ -75,9 +75,19 @@ class ChatsListScreen extends StatelessWidget {
               final lastMessage = data["lastMessage"] ?? "Mesaj gönderilmedi";
 
               final isMeShipper = data["shipperId"] == uid;
-              final rawLoadId = data["loadId"] ?? "";
-              final otherUserId = isMeShipper ? data["driverId"] : data["shipperId"];
 
+              // 🟢 BOŞLUKLARI TEMİZLEYEREK GÜVENLİ HALE GETİRİYORUZ
+              final rawLoadId = (data["loadId"] ?? "").toString().trim();
+              final otherUserId = (isMeShipper ? data["driverId"] : data["shipperId"])?.toString().trim() ?? "";
+
+              // 🟢 İŞTE HAYAT KURTARAN KALKAN BURASI! 🛡️
+              // Eğer veritabanında eski/bozuk bir veri kalmışsa ve ID'ler boşsa,
+              // uygulamayı çökertmek yerine o bozuk satırı ekranda tamamen gizliyoruz.
+              if (otherUserId.isEmpty || rawLoadId.isEmpty) {
+                return const SizedBox.shrink(); // Hiçbir şey çizmeden atla
+              }
+
+              // Eğer ID'ler dolu ve sağlamsa normal bir şekilde Firebase'e git
               return FutureBuilder<List<DocumentSnapshot>>(
                 future: Future.wait([
                   FirebaseFirestore.instance.collection("users").doc(otherUserId).get(),

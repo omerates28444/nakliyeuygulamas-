@@ -1,28 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../models/load.dart';
 
-import '../app_state.dart';
-import '../services/auth_service.dart';
+class LoadEditScreen extends StatefulWidget {
+  final Load load;
 
-class LoadCreateScreen extends StatefulWidget {
-  const LoadCreateScreen({super.key});
+  const LoadEditScreen({super.key, required this.load});
 
   @override
-  State<LoadCreateScreen> createState() => _LoadCreateScreenState();
+  State<LoadEditScreen> createState() => _LoadEditScreenState();
 }
 
-class _LoadCreateScreenState extends State<LoadCreateScreen> {
+class _LoadEditScreenState extends State<LoadEditScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _fromCityCtrl = TextEditingController();
-  final _toCityCtrl = TextEditingController();
-  final _weightCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
+  late TextEditingController _fromCityCtrl;
+  late TextEditingController _toCityCtrl;
+  late TextEditingController _weightCtrl;
+  late TextEditingController _priceCtrl;
 
   DateTime? _selectedDate;
   String _priceType = "offer";
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fromCityCtrl = TextEditingController(text: widget.load.fromCity);
+    _toCityCtrl = TextEditingController(text: widget.load.toCity);
+    _weightCtrl = TextEditingController(text: widget.load.weightKg?.toString() ?? "");
+    _priceType = widget.load.priceType ?? "offer";
+    _priceCtrl = TextEditingController(text: widget.load.fixedPrice?.toString() ?? "");
+    _selectedDate = widget.load.pickupDate;
+  }
 
   @override
   void dispose() {
@@ -46,36 +57,31 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
     }
   }
 
-  Future<void> _createLoad() async {
+  Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lütfen alım tarihi seçin.")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lütfen bir tarih seçin.")));
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      final uid = AuthService().currentUser?.uid;
-      if (uid == null) throw Exception("Oturum yok");
-
-      final data = {
-        "shipperId": uid,
+      final updatedData = {
         "fromCity": _fromCityCtrl.text.trim(),
         "toCity": _toCityCtrl.text.trim(),
         "weightKg": int.tryParse(_weightCtrl.text.trim()) ?? 0,
         "pickupDate": Timestamp.fromDate(_selectedDate!),
         "priceType": _priceType,
         "fixedPrice": _priceType == "fixed" ? (int.tryParse(_priceCtrl.text.trim()) ?? 0) : null,
-        "status": "open",
-        "createdAt": FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
-      await FirebaseFirestore.instance.collection("loads").add(data);
+      await FirebaseFirestore.instance.collection("loads").doc(widget.load.id).update(updatedData);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İlan başarıyla yayınlandı ✅")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("İlan başarıyla güncellendi ✅")));
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
@@ -86,6 +92,7 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 Oluşturma ekranındaki gibi yumuşak gri, köşeleri oval, çizgisiz kutu tasarımı
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.grey.shade50,
@@ -99,7 +106,7 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Yük İlanı Oluştur", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        title: const Text("İlanı Düzenle", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -114,28 +121,33 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
+              // 🟢 Nereden Şehir
               TextFormField(
                 controller: _fromCityCtrl,
                 decoration: inputDecoration.copyWith(hintText: "Nereden (Şehir)"),
-                validator: (v) => v!.isEmpty ? "Zorunlu alan" : null,
+                validator: (v) => v!.isEmpty ? "Boş olamaz" : null,
               ),
               const SizedBox(height: 12),
 
+              // 🟢 Nereye Şehir
               TextFormField(
                 controller: _toCityCtrl,
                 decoration: inputDecoration.copyWith(hintText: "Nereye (Şehir)"),
-                validator: (v) => v!.isEmpty ? "Zorunlu alan" : null,
+                validator: (v) => v!.isEmpty ? "Boş olamaz" : null,
               ),
               const SizedBox(height: 12),
 
+              // 🟢 Ağırlık
               TextFormField(
                 controller: _weightCtrl,
                 keyboardType: TextInputType.number,
                 decoration: inputDecoration.copyWith(hintText: "Ağırlık (kg)"),
-                validator: (v) => v!.isEmpty ? "Zorunlu alan" : null,
+                validator: (v) => v!.isEmpty ? "Ağırlık girin" : null,
               ),
               const SizedBox(height: 20),
 
+              // 🟢 Alım Tarihi
               InkWell(
                 onTap: _pickDate,
                 child: Padding(
@@ -157,6 +169,7 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
               Divider(color: Colors.grey.shade300, thickness: 1),
               const SizedBox(height: 16),
 
+              // 🟢 Fiyat Tipi (Dropdown)
               const Text("Fiyat Tipi", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
               DropdownButtonFormField<String>(
@@ -170,6 +183,7 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
                 onChanged: (v) => setState(() => _priceType = v ?? "offer"),
               ),
 
+              // 🟢 Sabit Fiyat Seçildiyse Çıkan Ücret Kutusu
               if (_priceType == "fixed") ...[
                 const SizedBox(height: 12),
                 TextFormField(
@@ -182,17 +196,18 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
 
               const SizedBox(height: 32),
 
+              // 🟢 İlanı Yayınla / Kaydet Butonu
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A668A),
+                    backgroundColor: const Color(0xFF5A668A), // Fotoğraftaki morumsu/gri butona çok yakın bir renk
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _createLoad,
+                  onPressed: _saveChanges,
                   icon: const Icon(Icons.check),
-                  label: const Text("İlanı Yayınla", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  label: const Text("Değişiklikleri Kaydet", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

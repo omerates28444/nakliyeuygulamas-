@@ -118,10 +118,88 @@ class PublicProfileScreen extends StatelessWidget {
           const SizedBox(height: 24),
           const Padding(
             padding: EdgeInsets.only(left: 4, bottom: 8),
+            child: Text("Değerlendirmeler & Yorumlar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+
+          // 🟢 2. YORUMLAR LİSTESİ (YENİ EKLENEN KISIM)
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection("ratings").where("toUserId", isEqualTo: userId).snapshots(),
+            builder: (context, ratingSnap) {
+              if (ratingSnap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final ratingDocs = ratingSnap.data?.docs.toList() ?? [];
+
+              // Yorumları yeniden eskiye sıralayalım
+              ratingDocs.sort((a, b) {
+                final ta = (a.data() as Map<String, dynamic>)["createdAt"] as Timestamp? ?? Timestamp.now();
+                final tb = (b.data() as Map<String, dynamic>)["createdAt"] as Timestamp? ?? Timestamp.now();
+                return tb.compareTo(ta);
+              });
+
+              if (ratingDocs.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(16)),
+                  child: Text("Henüz bir yorum yapılmamış.", style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+                );
+              }
+
+              return Column(
+                children: ratingDocs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final stars = data["stars"] ?? 5;
+                  final note = data["note"] ?? "";
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              ...List.generate(5, (i) => Icon(
+                                i < stars ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 20,
+                              )),
+                              const Spacer(),
+                              // Eğer istersen buraya tarihi de yazdırabilirsin
+                            ],
+                          ),
+                          if (note.toString().trim().isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                                "❝ $note ❞",
+                                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade800, fontSize: 14)
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 8),
             child: Text("Tamamladığı İşler", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
 
-          // 🟢 2. GEÇMİŞ İŞLER LİSTESİ (SADECE "DONE" OLANLAR)
+          // 🟢 3. GEÇMİŞ İŞLER LİSTESİ (SADECE "DONE" OLANLAR)
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("loads")
@@ -143,13 +221,11 @@ class PublicProfileScreen extends StatelessWidget {
 
               final allDocs = snap.data?.docs ?? [];
 
-              // 🟢 FİLTRELEME HİLESİ: Sadece durumu "done" olanları Dart tarafında filtreliyoruz
               final doneJobs = allDocs.where((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 return data["status"] == "done";
               }).toList();
 
-              // 🟢 SIRALAMA HİLESİ: En yeni iş en üstte (Firebase Index hatası almamak için)
               doneJobs.sort((a, b) {
                 final dataA = a.data() as Map<String, dynamic>;
                 final dataB = b.data() as Map<String, dynamic>;
@@ -165,12 +241,12 @@ class PublicProfileScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(16)
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.history_toggle_off, size: 50, color: Colors.grey.shade400),
+                      Icon(Icons.history_toggle_off, size: 50, color: Colors.grey.shade300),
                       const SizedBox(height: 12),
                       Text("Kullanıcının henüz tamamlanmış bir işi yok.", style: TextStyle(color: Colors.grey.shade600)),
                     ],
@@ -198,9 +274,10 @@ class PublicProfileScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 10),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      side: BorderSide(color: Colors.grey.shade300),
+                      side: BorderSide(color: Colors.grey.shade200),
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    color: Colors.white,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       leading: CircleAvatar(

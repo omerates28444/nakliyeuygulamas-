@@ -8,6 +8,8 @@ import '../app_state.dart';
 import 'load_create_screen.dart';
 import '../services/chat_service.dart';
 import 'chat_screen.dart';
+import 'load_edit_screen.dart';
+import 'public_profile_screen.dart';
 
 class OffersInboxScreen extends StatelessWidget {
   final ScrollController? controller;
@@ -68,7 +70,8 @@ class OffersInboxScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoadCreateScreen()),
+                      // 🟢 BURADAKİ CONST KELİMESİ SİLİNDİ
+                      MaterialPageRoute(builder: (_) => LoadCreateScreen()),
                     );
                   },
                 ),
@@ -95,7 +98,8 @@ class OffersInboxScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoadCreateScreen()),
+                      // 🟢 BURADAKİ CONST KELİMESİ SİLİNDİ
+                      MaterialPageRoute(builder: (_) => LoadCreateScreen()),
                     );
                   },
                 ),
@@ -133,7 +137,7 @@ class _LoadOffersCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Başlık + Sil
+            // Başlık + Düzenle + Sil
             Row(
               children: [
                 Expanded(
@@ -142,11 +146,26 @@ class _LoadOffersCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                   ),
                 ),
+
+                // 🟢 İLAN SADECE "OPEN" (AÇIK) DURUMDAYSA DÜZENLEME İKONU ÇIKSIN
+                if (load.status == "open")
+                  IconButton(
+                    tooltip: "İlanı Düzenle",
+                    icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => LoadEditScreen(load: load)),
+                      );
+                    },
+                  ),
+
+                // 🔴 MEVCUT SİLME BUTONU
                 IconButton(
                   tooltip: "İlanı Sil",
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: (load.status == "matched" || load.status == "delivered_pending")
-                      ? null
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  onPressed: (load.status == "matched" || load.status == "delivered_pending" || load.status == "done")
+                      ? null // İlan eşleştiyse silinemez
                       : () async {
                     final ok = await showDialog<bool>(
                       context: context,
@@ -159,6 +178,7 @@ class _LoadOffersCard extends StatelessWidget {
                             child: const Text("Vazgeç"),
                           ),
                           FilledButton(
+                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
                             onPressed: () => Navigator.pop(context, true),
                             child: const Text("Sil"),
                           ),
@@ -260,15 +280,7 @@ class _LoadOffersCard extends StatelessWidget {
                               return;
                             }
 
-                            await _rateUserDialog(
-                              context,
-                              toUserId: driverId,
-                              toRole: "driver",
-                              title: "Şoförü Puanla",
-                              loadId: load.id,
-                              nameHint: "Şoför",
-                            );
-
+                            // 🟢 1. ADIM: ÖNCE İŞİ TAMAMLANDI OLARAK İŞARETLE VE MESAJI GÖSTER
                             await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
                               "status": "done",
                               "doneAt": FieldValue.serverTimestamp(),
@@ -278,6 +290,17 @@ class _LoadOffersCard extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Teslim onaylandı ✅ İş tamamlandı.")),
                             );
+
+                            // 🟢 2. ADIM: SONRA PUANLAMA EKRANINI AÇ (Artık geri basarsa sadece puanlamayı atlamış olur)
+                            await _rateUserDialog(
+                              context,
+                              toUserId: driverId,
+                              toRole: "driver",
+                              title: "Şoförü Puanla",
+                              loadId: load.id,
+                              nameHint: "Şoför",
+                            );
+
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -305,8 +328,32 @@ class _LoadOffersCard extends StatelessWidget {
                   );
                 }
 
-                final offers = snap.data!.docs.map((d) => Offer.fromDoc(d)).toList();
-                if (offers.isEmpty) return const Text("Henüz teklif yok.");
+                final rawDocs = snap.data!.docs.toList();
+
+                // 🟢 1. Teklifleri tarihe göre sırala (En yeni teklif her zaman ilk sırada olsun)
+                rawDocs.sort((a, b) {
+                  final ta = (a.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+                  final tb = (b.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+                  return tb.compareTo(ta);
+                });
+
+                final allOffers = rawDocs.map((d) => Offer.fromDoc(d)).toList();
+
+                // 🟢 2. Sadece EN GÜNCEL teklifleri tut (Aynı şoförün eski tekliflerini gizle)
+                final Map<String, Offer> latestOffers = {};
+                for (final o in allOffers) {
+                  if (!latestOffers.containsKey(o.driverId)) {
+                    latestOffers[o.driverId] = o;
+                  }
+                }
+
+                // Ekranda gösterilecek temizlenmiş liste
+                final offers = latestOffers.values.toList();
+
+                if (offers.isEmpty) return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("Henüz teklif yok."),
+                );
 
                 return Column(
                   children: offers.map((o) {
@@ -372,36 +419,62 @@ class _LoadOffersCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // 🟢 ŞOFÖRÜN ADINA TIKLAYINCA AÇIK PROFİLİNE (YORUMLARA) GİTME
                               Row(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor: cs.surfaceContainerHighest,
-                                    child: Icon(Icons.person_outline, color: cs.onSurfaceVariant),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          o.driverName.isEmpty ? "Şoför" : o.driverName,
-                                          style: const TextStyle(fontWeight: FontWeight.w900),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          "${o.price} ₺",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            color: cs.primary,
-                                          ),
-                                        ),
-                                      ],
+                                  // 1. Tıklanabilir Profil Avatarı
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => PublicProfileScreen(userId: o.driverId)),
+                                      );
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: cs.surfaceContainerHighest,
+                                      child: Icon(Icons.person_outline, color: cs.onSurfaceVariant),
                                     ),
                                   ),
-                                  // 🟢 FLEXIBLE EKLENDİ VE METİN TAŞMASI ENGELLENDİ
+                                  const SizedBox(width: 10),
+
+                                  // 2. Tıklanabilir Şoför Adı ve Fiyat
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => PublicProfileScreen(userId: o.driverId)),
+                                        );
+                                      },
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            o.driverName.isEmpty ? "Şoför" : o.driverName,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              color: cs.primary,
+                                              decoration: TextDecoration.underline,
+                                              decorationColor: cs.primary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            "${o.price} ₺",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              color: cs.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // 3. Durum Etiketi (Beklemede vb.)
                                   Flexible(
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -418,9 +491,9 @@ class _LoadOffersCard extends StatelessWidget {
                                           Flexible(
                                             child: Text(
                                               statusLabel(o.status),
-                                              overflow: TextOverflow.ellipsis, // 🟢 ÇOK UZUNSA NOKTA NOKTA YAPAR (...)
+                                              overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
-                                                fontSize: 12, // 🟢 YER KAPLAMAMASI İÇİN BİRAZ KÜÇÜLTÜLDÜ
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w800,
                                                 color: statusColor(o.status),
                                               ),
@@ -430,7 +503,8 @@ class _LoadOffersCard extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-// YENİ EKLENEN SOHBET İKONU
+
+                                  // 4. Sohbet İkonu
                                   IconButton(
                                     tooltip: "Şoförle Mesajlaş",
                                     icon: const Icon(Icons.chat, color: Colors.blue),
@@ -450,61 +524,8 @@ class _LoadOffersCard extends StatelessWidget {
                                       );
                                     },
                                   ),
-                                  const SizedBox(width: 6),
-
-                                  // ✅ BURASI DOĞRU YER
-                                  PopupMenuButton<String>(
-                                    tooltip: "İşlemler",
-                                    onSelected: (v) async {
-                                      if (v == "reject") {
-                                        await FirebaseFirestore.instance.collection("offers").doc(o.id).update({
-                                          "status": "rejected",
-                                          "rejectedAt": FieldValue.serverTimestamp(),
-                                        });
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text("Teklif reddedildi ✅")),
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                        value: "reject",
-                                        enabled: (!acceptedAlready && (o.status == "sent" || o.status == "countered")),
-                                        child: const Text("Reddet"),
-                                      ),
-                                    ],
-                                  ),
                                 ],
-                              ),
-
-                              if (o.note.trim().isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: cs.surfaceContainerHighest,
-                                    border: Border.all(color: cs.outlineVariant),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(Icons.notes_outlined, size: 18, color: cs.onSurfaceVariant),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          o.note.trim(),
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ), // ROW KAPANIŞI
 
                               if (o.counterPrice != null) ...[
                                 const SizedBox(height: 10),
@@ -528,15 +549,6 @@ class _LoadOffersCard extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 6),
                                       Text("Fiyat: ${o.counterPrice} ₺", style: const TextStyle(fontWeight: FontWeight.w800)),
-                                      if ((o.counterNote ?? "").trim().isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "Not: ${o.counterNote}",
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ),
@@ -544,121 +556,59 @@ class _LoadOffersCard extends StatelessWidget {
 
                               const SizedBox(height: 12),
 
-                              Column(
-                                children: [
-                                  // ÜST: KARŞI TEKLİF
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 44,
-                                    child: OutlinedButton.icon(
-                                      onPressed: canAct
-                                          ? () async {
-                                        final res = await _counterDialog(
-                                          context,
-                                          initial: o.counterPrice?.toString() ?? "",
-                                        );
-                                        if (res == null) return;
-
-                                        try {
-                                          await _sendCounterOffer(
-                                            offerId: o.id,
-                                            counterPrice: res.$1,
-                                            counterNote: res.$2,
-                                          );
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text("Karşı teklif gönderildi ✅")),
-                                          );
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Hata: $e")),
-                                          );
-                                        }
-                                      }
-                                          : null,
-                                      icon: const Icon(Icons.edit_outlined),
-                                      label: const Text("Karşı Teklif Gönder"),
+                              if (!acceptedAlready && (o.status == "sent" || o.status == "countered" || o.status == "driver_rejected_counter"))
+                                Row(
+                                  children: [
+                                    IconButton.filled(
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: Colors.red.withOpacity(0.1),
+                                      ),
+                                      tooltip: "Reddet",
+                                      onPressed: () async {
+                                        await FirebaseFirestore.instance.collection("offers").doc(o.id).update({
+                                          "status": "rejected",
+                                          "rejectedAt": FieldValue.serverTimestamp(),
+                                        });
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Teklif reddedildi")));
+                                      },
+                                      icon: const Icon(Icons.close, color: Colors.red),
                                     ),
-                                  ),
-
-                                  const SizedBox(height: 10),
-
-                                  // ALT: REDDET + KABUL
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: SizedBox(
-                                          height: 44,
-                                          child: OutlinedButton.icon(
-                                            // 🟢 Şoför reddettiği durumda bile teklifi tamamen listeden silebilmek için
-                                            onPressed: (!acceptedAlready && (o.status == "sent" || o.status == "countered" || o.status == "driver_rejected_counter"))
-                                                ? () async {
-                                              final ok = await showDialog<bool>(
-                                                context: context,
-                                                builder: (_) => AlertDialog(
-                                                  title: const Text("Teklif reddedilsin mi?"),
-                                                  content: const Text("Bu teklifi reddedersen şoför tekrar teklif verebilir."),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.pop(context, false),
-                                                      child: const Text("Vazgeç"),
-                                                    ),
-                                                    FilledButton(
-                                                      onPressed: () => Navigator.pop(context, true),
-                                                      child: const Text("Reddet"),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-
-                                              if (ok != true) return;
-
-                                              await FirebaseFirestore.instance.collection("offers").doc(o.id).update({
-                                                "status": "rejected",
-                                                "rejectedAt": FieldValue.serverTimestamp(),
-                                              });
-
-                                              if (!context.mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Teklif reddedildi ✅")),
-                                              );
-                                            }
-                                                : null,
-                                            icon: const Icon(Icons.close),
-                                            label: const Text("Reddet"),
-                                          ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: FilledButton.tonalIcon(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.orange.withOpacity(0.1),
+                                          foregroundColor: Colors.orange.shade900,
                                         ),
+                                        onPressed: () async {
+                                          final res = await _counterDialog(context, initial: o.counterPrice?.toString() ?? "");
+                                          if (res == null) return;
+                                          try {
+                                            await _sendCounterOffer(offerId: o.id, counterPrice: res, counterNote: "");
+                                          } catch (e) {
+                                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hata: $e")));
+                                          }
+                                        },
+                                        icon: const Icon(Icons.handshake_outlined, size: 18),
+                                        label: const Text("Pazarlık Yap", style: TextStyle(fontWeight: FontWeight.bold)),
                                       ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: SizedBox(
-                                          height: 44,
-                                          child: FilledButton.icon(
-                                            onPressed: canAccept
-                                                ? () async {
-                                              await _acceptOffer(
-                                                loadId: load.id,
-                                                offerId: o.id,
-                                                driverId: o.driverId,
-                                                shipperId: load.shipperId ?? "",
-                                              );
-
-                                              if (!context.mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Teklif kabul edildi ✅")),
-                                              );
-                                            }
-                                                : null,
-                                            icon: const Icon(Icons.check),
-                                            label: const Text("Kabul Et"),
-                                          ),
-                                        ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: FilledButton.icon(
+                                        style: FilledButton.styleFrom(backgroundColor: Colors.green),
+                                        onPressed: () async {
+                                          await _acceptOffer(loadId: load.id, offerId: o.id, driverId: o.driverId, shipperId: load.shipperId ?? "");
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Teklif kabul edildi ✅")));
+                                        },
+                                        icon: const Icon(Icons.check, size: 18),
+                                        label: const Text("Kabul Et", style: TextStyle(fontWeight: FontWeight.bold)),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),
@@ -674,9 +624,8 @@ class _LoadOffersCard extends StatelessWidget {
     );
   }
 
-  Future<(int, String)?> _counterDialog(BuildContext context, {String initial = ""}) async {
+  Future<int?> _counterDialog(BuildContext context, {String initial = ""}) async {
     final priceCtrl = TextEditingController(text: initial);
-    final noteCtrl = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
@@ -688,12 +637,7 @@ class _LoadOffersCard extends StatelessWidget {
             TextField(
               controller: priceCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Karşı Teklif (₺)"),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: noteCtrl,
-              decoration: const InputDecoration(labelText: "Not (opsiyonel)"),
+              decoration: const InputDecoration(labelText: "Karşı Teklif (₺)", prefixIcon: Icon(Icons.local_offer_outlined)),
             ),
           ],
         ),
@@ -705,11 +649,10 @@ class _LoadOffersCard extends StatelessWidget {
     );
 
     if (ok != true) return null;
-
     final p = int.tryParse(priceCtrl.text.trim());
     if (p == null || p <= 0) return null;
 
-    return (p, noteCtrl.text.trim());
+    return p;
   }
 
   Future<void> _sendCounterOffer({
@@ -733,7 +676,6 @@ class _LoadOffersCard extends StatelessWidget {
   }) async {
     final db = FirebaseFirestore.instance;
 
-    // ✅ shipperId boş gelirse loads/{loadId} içinden çek
     String realShipperId = shipperId.trim();
     if (realShipperId.isEmpty) {
       final loadSnap = await db.collection("loads").doc(loadId).get();
@@ -744,20 +686,17 @@ class _LoadOffersCard extends StatelessWidget {
     }
 
     if (realShipperId.isEmpty) {
-      throw Exception("shipperId bulunamadı. loads/$loadId içinde shipperId olmalı.");
+      throw Exception("shipperId bulunamadı.");
     }
 
     final chatSvc = ChatService();
-
     final loadRef = db.collection("loads").doc(loadId);
     final offerRef = db.collection("offers").doc(offerId);
 
-    final othersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-
-    // İlan zaten eşleşmişse, şoförün ID'sini load.acceptedDriverId üzerinden alırız
-    final driverId = load.acceptedDriverId ?? "";
-    final chatId = chatSvc.getChatId(loadId: load.id, driverId: driverId);
+    final chatId = chatSvc.getChatId(loadId: loadId, driverId: driverId);
     final chatRef = db.collection("chats").doc(chatId);
+
+    final othersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
 
     final batch = db.batch();
 

@@ -197,7 +197,16 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
         children: [
           Icon(icon, size: 18),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w900)),
+
+          // 🟢 BURAYA FLEXIBLE VE TEXTOVERFLOW EKLENDİ
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+              overflow: TextOverflow.ellipsis, // 🟢 İsim çok uzunsa sonuna "..." koyar, ekranı bozmaz!
+            ),
+          ),
+
         ],
       ),
     );
@@ -271,7 +280,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
@@ -279,6 +288,31 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                         ),
                       ),
+
+                      // 🟢 YÜK SAHİBİYLE MESAJLAŞMA İKONU (YENİ)
+                      IconButton(
+                        tooltip: "Yük Sahibiyle Mesajlaş",
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.chat, color: Colors.blue, size: 28),
+                        onPressed: () async {
+                          final uid = FirebaseAuth.instance.currentUser?.uid;
+                          final shipperId = l.shipperId ?? "";
+                          if (uid == null || shipperId.isEmpty) return;
+
+                          final chatSvc = ChatService();
+                          final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
+                          await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
+
+                          if (!context.mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+
                       _statusChip(
                         l.status == "open" ? "Açık" : "Eşleşti",
                         icon: Icons.circle,
@@ -634,6 +668,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                 statusIcon = Icons.hourglass_bottom;
                             }
                             final bool canRespondToCounter = myOffer.status == "countered";
+
                             return Card(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -645,40 +680,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (myOffers.isNotEmpty) ...[
-                                      const Text("Geçmiş Tekliflerin", style: TextStyle(fontWeight: FontWeight.w900)),
-                                      const SizedBox(height: 8),
-                                      ...myOffers.take(3).map((o) {
-                                        final st = o.status;
-                                        final label = st == "rejected"
-                                            ? "Reddedildi"
-                                            : st == "accepted"
-                                            ? "Kabul edildi"
-                                            : st == "countered"
-                                            ? "Karşı teklif"
-                                            : "Beklemede";
-                                        return Padding(
-                                          padding: const EdgeInsets.only(bottom: 6),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  "${o.price} ₺ • $label",
-                                                  style: const TextStyle(fontWeight: FontWeight.w700),
-                                                ),
-                                              ),
-                                              if ((o.note ?? "").trim().isNotEmpty)
-                                                Text((o.note ?? "").trim(), style: const TextStyle(fontSize: 12)),
-                                            ],
-                                          ),
-                                        );
-                                      }),
-                                      const Divider(),
-                                    ],
+                                    // 🟢 SİLİNEN KISIM: "Geçmiş Tekliflerin" kod bloğunu tamamen uçurduk! Ekran artık tertemiz.
 
                                     Row(
                                       children: [
-                                        Icon(statusIcon),
+                                        Icon(statusIcon, color: Theme.of(context).colorScheme.primary),
                                         const SizedBox(width: 8),
                                         Text(
                                           "Senin teklifin: ${myOffer.price} ₺",
@@ -689,140 +695,116 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                       ],
                                     ),
 
-
                                     if (counter != null) ...[
-                                      const SizedBox(height: 12),
-                                      const Divider(),
-
-                                      // 🟢 1. KARŞI TEKLİF BİLGİSİ
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Yük Sahibinin Teklifi",
-                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-                                          ),
-                                          _statusChip("$counter ₺", icon: Icons.payments_outlined),
-                                        ],
-                                      ),
-                                      if (counterNote.isNotEmpty) ...[
-                                        const SizedBox(height: 6),
-                                        Text("Not: $counterNote", style: Theme.of(context).textTheme.bodySmall),
-                                      ],
-
                                       const SizedBox(height: 16),
-                                      const Text("Teklif Ver", style: TextStyle(fontWeight: FontWeight.w800)),
-                                      const SizedBox(height: 8),
 
-                                      // 🟢 2. SENİN ATTIĞIN TASARIMDAKİ FİYAT KUTUSU
-                                      TextField(
-                                        controller: priceCtrl,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                          labelText: "Farklı bir teklifiniz var mı? (₺)",
-                                          prefixIcon: const Icon(Icons.local_offer_outlined),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          isDense: true,
+                                      // 🟢 YÜK SAHİBİNİN TEKLİFİ (Kompakt Kutu)
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.shade50,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.orange.shade200),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                const Text("Yük Sahibinin Teklifi:", style: TextStyle(fontWeight: FontWeight.w800, color: Colors.black87)),
+                                                Text("$counter ₺", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.orange.shade900, fontSize: 16)),
+                                              ],
+                                            ),
+
+                                          ],
                                         ),
                                       ),
 
                                       const SizedBox(height: 12),
 
-                                      // 🟢 3. YAN YANA AKSİYON BUTONLARI (Kabul, Reddet, Gönder)
+                                      // 🟢 YÜK SAHİBİ EKRANI İLE BİREBİR AYNI AKSİYON BUTONLARI
                                       Row(
                                         children: [
-                                          // ✅ KABUL ET (Yeşil)
-                                          Expanded(
-                                            child: FilledButton(
-                                              style: FilledButton.styleFrom(
-                                                backgroundColor: Colors.green,
-                                                padding: const EdgeInsets.symmetric(horizontal: 2), // Ekrana sığması için daraltıldı
-                                              ),
-                                              onPressed: canRespondToCounter
-                                                  ? () async {
-                                                try {
-                                                  await OfferService().acceptCounterOffer(l, myOffer);
-                                                  if (!mounted) return;
-                                                  Navigator.pop(context);
-                                                  _snack("Karşı teklif kabul edildi ✅");
-                                                } catch (e) {
-                                                  _snack("Kabul hatası: $e");
-                                                }
-                                              }
-                                                  : null,
-                                              child: const Text("Kabul Et", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                          // ❌ REDDET İKONU (Kırmızı)
+                                          IconButton.filled(
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: Colors.red.withOpacity(0.1),
                                             ),
+                                            tooltip: "Reddet",
+                                            onPressed: canRespondToCounter ? () async {
+                                              try {
+                                                await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({"status": "driver_rejected_counter"});
+                                                if (!mounted) return; _snack("Teklifi reddettiniz.");
+                                              } catch (e) { _snack("Hata: $e"); }
+                                            } : null,
+                                            icon: const Icon(Icons.close, color: Colors.red),
                                           ),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 8),
 
-                                          // ❌ REDDET (Kırmızı Çerçeveli)
+                                          // 💬 PAZARLIK BUTONU (Turuncu - Tıklanınca şık bir pop-up açılır)
                                           Expanded(
-                                            child: OutlinedButton(
-                                              style: OutlinedButton.styleFrom(
-                                                foregroundColor: Colors.red,
-                                                side: const BorderSide(color: Colors.red),
-                                                padding: const EdgeInsets.symmetric(horizontal: 2),
-                                              ),
-                                              onPressed: canRespondToCounter
-                                                  ? () async {
-                                                try {
-                                                  await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
-                                                    "status": "driver_rejected_counter",
-                                                  });
-                                                  if (!mounted) return;
-                                                  _snack("Teklifi reddettiniz.");
-                                                } catch (e) {
-                                                  _snack("Hata: $e");
-                                                }
-                                              }
-                                                  : null,
-                                              child: const Text("Reddet", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-
-                                          // 🚀 YENİ TEKLİF GÖNDER (Ana Renk)
-                                          Expanded(
-                                            child: FilledButton(
+                                            child: FilledButton.tonalIcon(
                                               style: FilledButton.styleFrom(
-                                                padding: const EdgeInsets.symmetric(horizontal: 2),
+                                                backgroundColor: Colors.orange.withOpacity(0.1),
+                                                foregroundColor: Colors.orange.shade900,
                                               ),
-                                              onPressed: canRespondToCounter
-                                                  ? () async {
-                                                final newPrice = int.tryParse(priceCtrl.text.trim()) ?? 0;
-                                                if (newPrice <= 0) {
-                                                  _snack("Geçerli bir tutar girin.");
-                                                  return;
-                                                }
+                                              onPressed: canRespondToCounter ? () async {
+                                                final priceCtrlDialog = TextEditingController();
+                                                final ok = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                    title: const Text("Yeni Teklif İlet"),
+                                                    content: TextField(
+                                                      controller: priceCtrlDialog,
+                                                      keyboardType: TextInputType.number,
+                                                      decoration: const InputDecoration(
+                                                          labelText: "Yeni Teklifiniz (₺)",
+                                                          prefixIcon: Icon(Icons.local_offer_outlined)
+                                                      ),
+                                                    ),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
+                                                      FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Gönder")),
+                                                    ],
+                                                  ),
+                                                );
+
+                                                if (ok != true) return;
+                                                final newPrice = int.tryParse(priceCtrlDialog.text.trim()) ?? 0;
+                                                if (newPrice <= 0) return _snack("Geçerli bir tutar girin.");
 
                                                 try {
-                                                  // Eski teklifi iptal et ve yenisini oluştur
-                                                  await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
-                                                    "status": "driver_rejected_counter",
-                                                  });
-
+                                                  await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({"status": "driver_rejected_counter"});
                                                   final uid2 = FirebaseAuth.instance.currentUser?.uid;
                                                   await FirebaseFirestore.instance.collection("offers").add({
-                                                    "loadId": l.id,
-                                                    "driverId": uid2,
-                                                    "driverName": appState.displayName,
-                                                    "price": newPrice,
-                                                    "note": "",
-                                                    "status": "sent",
-                                                    "createdAt": FieldValue.serverTimestamp(),
+                                                    "loadId": l.id, "driverId": uid2, "driverName": appState.displayName, "price": newPrice, "note": "", "status": "sent", "createdAt": FieldValue.serverTimestamp(),
                                                   });
-
                                                   if (!mounted) return;
-                                                  Navigator.pop(context);
+                                                  Navigator.pop(context); // Paneli kapatıp rahatlatır
                                                   _snack("Yeni teklifiniz iletildi ✅");
-                                                } catch (e) {
-                                                  _snack("Hata: $e");
-                                                }
-                                              }
-                                                  : null,
-                                              child: const Text("Gönder", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                                } catch (e) { _snack("Hata: $e"); }
+                                              } : null,
+                                              icon: const Icon(Icons.handshake_outlined, size: 18),
+                                              label: const Text("Pazarlık Yap", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+
+                                          // ✅ KABUL ET BUTONU (Yeşil)
+                                          Expanded(
+                                            child: FilledButton.icon(
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                              ),
+                                              onPressed: canRespondToCounter ? () async {
+                                                try {
+                                                  await OfferService().acceptCounterOffer(l, myOffer);
+                                                  if (!mounted) return; Navigator.pop(context); _snack("Karşı teklif kabul edildi ✅");
+                                                } catch (e) { _snack("Kabul hatası: $e"); }
+                                              } : null,
+                                              icon: const Icon(Icons.check, size: 18),
+                                              label: const Text("Kabul Et", style: TextStyle(fontWeight: FontWeight.bold)),
                                             ),
                                           ),
                                         ],
@@ -841,29 +823,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 // YENİ EKLENEN ŞOFÖR SOHBET BUTONU
                   // 🟢 AKILLI SOHBET / BİLGİ ALANI
                   // STANDART SOHBET BUTONU
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final uid = FirebaseAuth.instance.currentUser?.uid;
-                        final shipperId = l.shipperId ?? "";
-                        if (uid == null || shipperId.isEmpty) return;
 
-                        final chatSvc = ChatService();
-                        final chatId = chatSvc.getChatId(loadId: l.id, driverId: uid);
-                        await chatSvc.ensureChat(loadId: l.id, shipperId: shipperId, driverId: uid);
-
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
-                        );
-                      },
-                      icon: const Icon(Icons.chat),
-                      label: const Text("Yük Sahibi ile Mesajlaş"),
-                    ),
-                  ),
                   const SizedBox(height: 10),
                   // 🟢 AKILLI ALAN BİTİŞİ
                   const SizedBox(height: 10),
