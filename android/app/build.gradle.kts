@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.omerates.nakliyeyg.nakliyeuyg"
+        applicationId = "com.logigo.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
