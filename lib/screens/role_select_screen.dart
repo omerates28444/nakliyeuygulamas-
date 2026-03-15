@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../app_state.dart';
 import 'login_screen.dart';
+import 'package:flutter/services.dart';
 
 class RoleSelectScreen extends StatelessWidget {
   const RoleSelectScreen({super.key});
@@ -21,15 +22,25 @@ class RoleSelectScreen extends StatelessWidget {
               child: Column(
                 children: [
 
-                  Image.asset(
-                    "assets/logo.png",
-                    height: 80,
+                  Container(
+                    width: 150,
+                    height: 150,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        "assets/logo.png",
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
                   Text(
-                    "LogiGo",
+                    "LogiMap",
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
@@ -41,6 +52,8 @@ class RoleSelectScreen extends StatelessWidget {
                     "Akıllı Nakliye Platformu",
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
+
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
@@ -93,6 +106,51 @@ class RoleSelectScreen extends StatelessWidget {
                     child: Text(
                       "Rol seçimi sadece arayüz yönlendirmesi içindir. Hesap rolü Firestore profilinden doğrulanır.",
                       style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.exit_to_app),
+                label: const Text("Uygulamadan Çık"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  SystemNavigator.pop();
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            Center(
+              child: Column(
+                children: const [
+                  Text(
+                    "LogiMap v1.0",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "© 2026 LogiMap",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
                     ),
                   ),
                 ],

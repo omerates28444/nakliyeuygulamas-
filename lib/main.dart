@@ -19,105 +19,149 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    // 🟢 ÇÖZÜM 1: appState değiştiğinde tüm uygulamanın haberi olması için ListenableBuilder ekledik.
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'LogiMap', // 🟢 Marka adını LogiMap olarak düzelttik
+
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.indigo,
+            scaffoldBackgroundColor: const Color(0xFFF7F7FB),
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              titleTextStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
+            ),
+            dividerTheme: const DividerThemeData(thickness: 1),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            outlinedButtonTheme: OutlinedButtonThemeData(
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+
+          // 🟢 ÇÖZÜM 2: Doğrudan StreamBuilder/FutureBuilder kullanmak yerine AuthGate widget'ına yönlendirdik
+          home: const AuthGate(),
+        );
+      },
+    );
+  }
+}
+
+// 🟢 ÇÖZÜM 2 DETAY: Stateful yapı sayesinde Future(veri çekme) işlemini sadece 1 KERE yapıyoruz (Maliyet Optimizasyonu)
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  Future<void>? _profileFuture;
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    // Oturum durumunu dinliyoruz
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+          if (user != null) {
+            // Kullanıcı giriş yaptıysa Firestore'dan bilgileri çek (YALNIZCA 1 KEZ)
+            _profileFuture = _hydrateAppStateFromFirestore(user);
+          } else {
+            // Kullanıcı çıkış yaptıysa state'i sıfırla
+            _profileFuture = null;
+            if (appState.isLoggedIn) appState.logout();
+          }
+        });
+      }
+    });
+  }
+
   Future<void> _hydrateAppStateFromFirestore(User user) async {
-    // users/{uid} profilini oku ve appState'i doldur
-    final data = await AuthService().getProfileByUid(user.uid);
+    try {
+      final data = await AuthService().getProfileByUid(user.uid);
 
-    final role = (data['role'] ?? '').toString();
-    final name = (data['name'] ?? 'Kullanıcı').toString();
+      final role = (data['role'] ?? '').toString();
+      final name = (data['name'] ?? 'Kullanıcı').toString();
 
-    // Rol valid değilse güvenlik için logout
-    if (role != 'driver' && role != 'shipper') {
+      if (role != 'driver' && role != 'shipper') {
+        await AuthService().logout();
+        appState.logout();
+        return;
+      }
+
+      int? capacity;
+      if (role == 'driver' && data['extra'] != null) {
+        capacity = (data['extra']['capacityKg'] as num?)?.toInt();
+      }
+
+      appState.setRole(role);
+      appState.login(name: name, capacity: capacity);
+
+    } catch (e) {
+      debugPrint("🔥 OTOMATİK GİRİŞ HATASI: $e");
       await AuthService().logout();
       appState.logout();
-      return;
     }
-
-    appState.setRole(role);
-    appState.login(name: name);
-    await NotificationService.syncTokenToUser();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'LoadShare V1',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.indigo,
-        scaffoldBackgroundColor: const Color(0xFFF7F7FB),
+    // 1. Durum: Hiç giriş yapılmamış
+    if (_currentUser == null) {
+      return const RoleSelectScreen();
+    }
 
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-        ),
-
-        dividerTheme: const DividerThemeData(thickness: 1),
-
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-        ),
-
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-        ),
-
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-        ),
-      ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snap) {
-          // Auth beklerken
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          final user = snap.data;
-
-          // Oturum yoksa
-          if (user == null) {
-            // RAM temiz
-            if (appState.isLoggedIn) appState.logout();
-            return const RoleSelectScreen();
-          }
-
-          // Oturum varsa -> profil çekip appState'i doldur
-          return FutureBuilder<void>(
-            future: _hydrateAppStateFromFirestore(user),
-            builder: (context, fsnap) {
-              if (fsnap.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              // AppState dolduysa
-              if (!appState.isLoggedIn) {
-                // Profil hatalı/eksikse rol seçime gönder
-                return const RoleSelectScreen();
-              }
-
-              return const AppShell();
-            },
+    // 2. Durum: Giriş yapılmış ama Firestore'dan profil bekleniyor
+    return FutureBuilder<void>(
+      future: _profileFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
-        },
-      ),
+        }
+
+        // 3. Durum: Profil çekilirken hata oluştuysa veya rol atanamadıysa
+        if (snap.hasError || !appState.isLoggedIn) {
+          return const RoleSelectScreen();
+        }
+
+        // 4. Durum: Her şey başarılı, ana harita ekranına (AppShell) yönlendir
+        return const AppShell();
+      },
     );
   }
 }

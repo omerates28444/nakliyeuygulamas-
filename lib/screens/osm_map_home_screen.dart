@@ -787,9 +787,14 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                               ),
                                               onPressed: canRespondToCounter ? () async {
                                                 try {
+                                                  // 🟢 Şoför para ödemez, direkt servisi çağırıp işi alır!
                                                   await OfferService().acceptCounterOffer(l, myOffer);
-                                                  if (!mounted) return; Navigator.pop(context); _snack("Karşı teklif kabul edildi ✅");
-                                                } catch (e) { _snack("Kabul hatası: $e"); }
+                                                  if (!mounted) return;
+                                                  Navigator.pop(context);
+                                                  _snack("Karşı teklif kabul edildi ✅");
+                                                } catch (e) {
+                                                  _snack("Kabul hatası: $e");
+                                                }
                                               } : null,
                                               icon: const Icon(Icons.check, size: 18),
                                               label: const Text("Kabul Et", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -909,11 +914,20 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final trCenter = LatLng(39.0, 35.0);
-    // Sadece 'open' olan ilanları getir. (Şoförler için)
-    final loadsStream = FirebaseFirestore.instance
+
+    // 🟢 1. TEMEL SORGUMUZ: Sadece açık ilanlar
+    Query<Map<String, dynamic>> loadsQuery = FirebaseFirestore.instance
         .collection("loads")
-        .where("status", isEqualTo: "open") // SADECE AÇIK İLANLAR
-        .snapshots();
+        .where("status", isEqualTo: "open");
+
+    // 🟢 2. AKILLI FİLTRELEME: Kullanıcı şoförse ve kapasitesi belliyse
+    if (appState.role == "driver" && appState.capacityKg != null) {
+      // Yükün ağırlığı, şoförün kapasitesinden KÜÇÜK veya EŞİT olanları getir
+      loadsQuery = loadsQuery.where("weightKg", isLessThanOrEqualTo: appState.capacityKg);
+    }
+
+    // Sorguyu dinlemeye başla
+    final loadsStream = loadsQuery.snapshots();
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

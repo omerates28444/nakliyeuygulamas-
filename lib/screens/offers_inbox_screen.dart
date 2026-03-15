@@ -10,6 +10,7 @@ import '../services/chat_service.dart';
 import 'chat_screen.dart';
 import 'load_edit_screen.dart';
 import 'public_profile_screen.dart';
+import 'payment_screen.dart';
 
 class OffersInboxScreen extends StatelessWidget {
   final ScrollController? controller;
@@ -320,15 +321,20 @@ class _LoadOffersCard extends StatelessWidget {
                               return;
                             }
 
-                            // 🟢 1. ADIM: ÖNCE İŞİ TAMAMLANDI OLARAK İŞARETLE VE MESAJI GÖSTER
+                            // 🟢 1. ADIM: İŞİ TAMAMLA VE PARAYI ŞOFÖRE AKTAR (Sinyal gönder)
                             await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
                               "status": "done",
+                              "paymentStatus": "transferred_to_driver", // 🟢 YENİ: Ödeme altyapısına giden sinyal
                               "doneAt": FieldValue.serverTimestamp(),
                             });
 
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Teslim onaylandı ✅ İş tamamlandı.")),
+                              const SnackBar(
+                                content: Text("Teslim onaylandı ✅ Havuzdaki tutar şoförün IBAN'ına aktarılıyor."),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 4),
+                              ),
                             );
 
                             // 🟢 2. ADIM: SONRA PUANLAMA EKRANINI AÇ (Artık geri basarsa sadece puanlamayı atlamış olur)
@@ -638,10 +644,20 @@ class _LoadOffersCard extends StatelessWidget {
                                     Expanded(
                                       child: FilledButton.icon(
                                         style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                                        onPressed: () async {
-                                          await _acceptOffer(loadId: load.id, offerId: o.id, driverId: o.driverId, shipperId: load.shipperId ?? "");
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Teklif kabul edildi ✅")));
+                                        onPressed: () {
+                                          // 🟢 Yük sahibi ödemeyi yapmak için PaymentScreen'e yönlendirilir
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => PaymentScreen(
+                                                loadId: load.id,
+                                                offerId: o.id,
+                                                driverId: o.driverId,
+                                                shipperId: load.shipperId ?? "",
+                                                offerPrice: o.counterPrice ?? o.price,
+                                              ),
+                                            ),
+                                          );
                                         },
                                         icon: const Icon(Icons.check, size: 18),
                                         label: const Text("Kabul Et", style: TextStyle(fontWeight: FontWeight.bold)),

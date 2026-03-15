@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../services/auth_service.dart';
-import '../models/load.dart';
-// import '../app_state.dart'; // (Aynı import iki kere yazılmıştı, birini sildim)
 import 'role_select_screen.dart';
 import 'kyc_screen.dart';
 
@@ -37,8 +35,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final plateCtrl = TextEditingController();
   final capacityCtrl = TextEditingController();
   final vehicleTypeCtrl = TextEditingController();
+  final ibanCtrl = TextEditingController(); // 🟢 YENİ: IBAN KONTROLCÜSÜ
+
   String vehicleType = "Kamyonet";
-  String kycStatus = "none"; // Durumu saklamak için yeni değişken
+  String kycStatus = "none";
 
   @override
   void dispose() {
@@ -48,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     plateCtrl.dispose();
     capacityCtrl.dispose();
     vehicleTypeCtrl.dispose();
+    ibanCtrl.dispose(); // 🟢 YENİ EKLENDİ
     super.dispose();
   }
 
@@ -111,7 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final snap = await db.collection("users").doc(uid).get();
     final data = snap.data() ?? {};
 
-    // 'extra' isimli kutuyu alıyoruz
     final extra = (data["extra"] is Map) ? Map<String, dynamic>.from(data["extra"]) : <String, dynamic>{};
 
     setState(() {
@@ -119,12 +119,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       phoneCtrl.text = (data["phone"] ?? "").toString();
       cityCtrl.text = (data["city"] ?? "").toString();
 
-      // Araç bilgilerini 'extra' içinden okuyoruz
       vehicleType = (extra["vehicleType"] ?? "Kamyonet").toString();
       plateCtrl.text = (extra["plate"] ?? "").toString();
       capacityCtrl.text = (extra["capacityKg"] ?? "").toString();
 
-      // EN ÖNEMLİ SATIR: Onay durumunu 'extra' klasöründen alıyoruz
+      // 🟢 YENİ: Firebase'den IBAN'ı okuma
+      ibanCtrl.text = (extra["iban"] ?? "").toString();
+
       kycStatus = (extra["kycStatus"] ?? data["kycStatus"] ?? "none").toString();
     });
   }
@@ -156,18 +157,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (isDriver) {
         final cap = int.tryParse(capacityCtrl.text.trim());
+        final iban = ibanCtrl.text.trim().replaceAll(" ", ""); // 🟢 Boşlukları temizle
+
         if (plateCtrl.text.trim().isEmpty) throw Exception("Plaka boş olamaz");
         if (cap == null || cap <= 0) throw Exception("Kapasite geçerli olmalı");
+        if (iban.isNotEmpty && !iban.toUpperCase().startsWith("TR")) {
+          throw Exception("IBAN 'TR' ile başlamalıdır");
+        }
 
-        // Nokta (.) kullanarak sadece ilgili alanları güncelliyoruz.
         update["extra.vehicleType"] = vehicleType;
         update["extra.plate"] = plateCtrl.text.trim();
         update["extra.capacityKg"] = cap;
+        update["extra.iban"] = iban.toUpperCase(); // 🟢 YENİ: IBAN'ı kaydet
       }
 
       await db.collection("users").doc(uid).update(update);
 
-      // AppState isim güncelle
       appState.displayName = name;
       appState.notifyListeners();
 
@@ -320,15 +325,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-              // 🟢 1. YENİ ŞIK PROFİL BAŞLIĞI VE PUAN KARTI
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance.collection("users").doc(uid).snapshots(),
                 builder: (context, userSnap) {
                   final d = userSnap.data?.data() ?? {};
-                  final avg = (d["ratingAvg"] is num) ? (d["ratingAvg"] as num).toDouble() : 5.0; // Varsayılan 5.0
+                  final avg = (d["ratingAvg"] is num) ? (d["ratingAvg"] as num).toDouble() : 5.0;
                   final cnt = (d["ratingCount"] is int) ? d["ratingCount"] as int : 0;
 
-                  // ✅ DÜZELTİLMİŞ İSİM KONTROLÜ (Parantez sorunu çözüldü)
                   String displayName = "İsimsiz";
                   if (d["name"] != null && d["name"].toString().trim().isNotEmpty) {
                     displayName = d["name"].toString();
@@ -380,7 +383,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 email,
                                 style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8)),
                               ),
-                              // 🟢 SADECE ŞOFÖRSE PUAN GÖSTER, YÜK SAHİBİYSE GİZLE
                               if (isDriver) ...[
                                 const SizedBox(height: 8),
                                 Container(
@@ -417,7 +419,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text("Kişisel Bilgiler", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
 
-              // 🟢 2. SENİN YAZDIĞIN PROFİL DÜZENLEME FORMU
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 elevation: 1,
@@ -446,7 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Divider(height: 30),
                         const Align(
                           alignment: Alignment.centerLeft,
-                          child: Text("Araç Bilgileri", style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text("Araç & Finans Bilgileri", style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
@@ -471,6 +472,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(labelText: "Kapasite (kg)", prefixIcon: Icon(Icons.scale_outlined)),
                         ),
+                        const SizedBox(height: 10),
+
+                        // 🟢 YENİ: IBAN ALANI EKLENDİ
+                        TextField(
+                          controller: ibanCtrl,
+                          decoration: const InputDecoration(
+                            labelText: "Banka IBAN",
+                            hintText: "TR...",
+                            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 6, left: 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Teslimat tamamlandığında ücretiniz bu IBAN'a yatırılacaktır.",
+                              style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
                       ],
 
                       const SizedBox(height: 16),
@@ -494,7 +516,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text("Hesap Ayarları", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
 
-              // 🟢 3. SENİN YAZDIĞIN ŞİFRE, EMAIL VE KYC AYARLARI
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 elevation: 1,
@@ -548,7 +569,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text("Geçmiş İşlerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
 
-              // 🟢 4. GEÇMİŞ İŞLER (Senin sorgun + Benim şık kart tasarımım)
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection("loads")
@@ -586,7 +606,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final toCity = data["toCity"] ?? "Bilinmiyor";
                       final weight = data["weightKg"] ?? "0";
 
-                      // Tarihi formatlama (Eğer doneAt varsa)
                       String dateStr = "";
                       final doneAt = data["doneAt"] as Timestamp?;
                       if (doneAt != null) {
@@ -645,7 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              // 🟢 5. BANA YAPILAN YORUMLAR (Sadece Şoförse Göster)
+
               if (isDriver) ...[
                 const SizedBox(height: 24),
                 const Padding(

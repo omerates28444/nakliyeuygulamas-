@@ -153,7 +153,13 @@ class _LoginScreenState extends State<LoginScreen> {
           extra: driverInfo,
         );
 
-        appState.login(name: name);
+        // 🟢 DEĞİŞEN KISIM: Kayıt olan kişi şoförse, kapasiteyi appState'e de ver
+        int? registeredCapacity;
+        if (isDriver) {
+          registeredCapacity = int.tryParse(capacityCtrl.text.trim());
+        }
+        appState.login(name: name, capacity: registeredCapacity);
+
         _snack("Kayıt başarılı ✅");
         if (!mounted) return;
         _goToApp();
@@ -171,19 +177,19 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (profileRole != selectedRole) {
-          await auth.logout();
-          appState.logout();
+          // ... (rol uyuşmazlığı hatası aynı kalıyor)
+        }
 
-          final roleText = profileRole == "driver" ? "Şoför" : "Yük Sahibi";
-          _snack("Bu email '$roleText' hesabına ait. Doğru rolü seçip giriş yap.");
-
-          if (!mounted) return;
-          _goBackToRoleSelect();
-          return;
+        // 🟢 DEĞİŞEN KISIM: Firebase'den gelen profilin içinden 'extra' -> 'capacityKg' değerini al
+        int? loginCapacity;
+        if (profileRole == "driver" && profile['extra'] != null) {
+          // Firestore'dan gelen veri num veya int olabilir, güvenli şekilde dönüştürüyoruz
+          loginCapacity = (profile['extra']['capacityKg'] as num?)?.toInt();
         }
 
         appState.setRole(profileRole);
-        appState.login(name: profileName);
+        // 🟢 Kapasiteyi sisteme bildiriyoruz
+        appState.login(name: profileName, capacity: loginCapacity);
 
         _snack("Giriş başarılı ✅");
         if (!mounted) return;

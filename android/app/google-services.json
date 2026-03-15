@@ -26,6 +26,25 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:284206407393:android:427c1e581247d2edbbe1a0",
+        "android_client_info": {
+          "package_name": "com.logimap.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApD2yFdgjHdktPsg8UPxj2P76XRI8I0x8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:284206407393:android:0f73485bb18a09f2bbe1a0",
         "android_client_info": {
           "package_name": "com.omerates.nakliyeyg.nakliyeuyg"

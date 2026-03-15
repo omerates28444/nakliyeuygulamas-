@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.logigo.app"
+        applicationId = "com.logimap.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
