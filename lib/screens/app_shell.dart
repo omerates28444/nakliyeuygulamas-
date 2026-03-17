@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../app_state.dart';
 import 'osm_map_home_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
@@ -34,8 +36,15 @@ class AppShell extends StatelessWidget {
           Navigator.of(context).pop();
         }
       },
-      child: const Scaffold(
-        body: OsmMapHomeScreen(),
+      child: ListenableBuilder(
+        listenable: appState,
+        builder: (context, _) {
+          // ✅ Adminse direkt Dashboard'a, değilse Haritaya
+          if (appState.isAdmin) {
+            return const AdminDashboardScreen();
+          }
+          return const OsmMapHomeScreen();
+        },
       ),
     );
   }

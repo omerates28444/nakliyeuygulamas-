@@ -24,21 +24,21 @@ class MyApp extends StatelessWidget {
     final name = (data['name'] ?? 'Kullanıcı').toString();
 
     // Rol valid değilse güvenlik için logout
-    if (role != 'driver' && role != 'shipper') {
+    if (role != 'driver' && role != 'shipper' && role != 'admin') {
       await AuthService().logout();
       appState.logout();
       return;
     }
 
     appState.setRole(role);
-    appState.login(name: name);
+    appState.login(name: name, admin: role == 'admin');
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'LoadShare V1',
+      title: 'RoadMap',
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
@@ -77,7 +77,6 @@ class MyApp extends StatelessWidget {
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snap) {
-          // Auth beklerken
           if (snap.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
@@ -86,14 +85,11 @@ class MyApp extends StatelessWidget {
 
           final user = snap.data;
 
-          // Oturum yoksa
           if (user == null) {
-            // RAM temiz
             if (appState.isLoggedIn) appState.logout();
             return const RoleSelectScreen();
           }
 
-          // Oturum varsa -> profil çekip appState'i doldur
           return FutureBuilder<void>(
             future: _hydrateAppStateFromFirestore(user),
             builder: (context, fsnap) {
@@ -103,9 +99,7 @@ class MyApp extends StatelessWidget {
                 );
               }
 
-              // AppState dolduysa
               if (!appState.isLoggedIn) {
-                // Profil hatalı/eksikse rol seçime gönder
                 return const RoleSelectScreen();
               }
 

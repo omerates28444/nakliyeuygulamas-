@@ -11,7 +11,6 @@ import '../app_state.dart';
 import '../models/load.dart';
 import '../models/offer.dart';
 import 'offers_inbox_screen.dart';
-import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
 import 'profile_screen.dart';
 
@@ -35,7 +34,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     _initLocation();
   }
 
-  /// Panel/iş listesinden haritayı o işe odakla
+  bool get _isCurrentlyDriver {
+    if (appState.isAdmin) return appState.adminViewRole == "driver";
+    return appState.role == "driver";
+  }
+
   void focusJobById(String jobId) async {
     try {
       final doc = await FirebaseFirestore.instance.collection("loads").doc(jobId).get();
@@ -92,7 +95,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   List<Marker> _buildMarkers(List<Load> loads) {
     final markers = <Marker>[];
 
-    // kullanıcı konumu
     if (_pos != null) {
       markers.add(
         Marker(
@@ -116,7 +118,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       );
     }
 
-    // ✅ sadece OPEN ilanlar marker
     for (final l in loads) {
       if (l.fromLat == null || l.fromLng == null) continue;
       if (l.status != "open") continue;
@@ -138,7 +139,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     return markers;
   }
 
-  // ✅ driver karşı teklifi kabul
   Future<void> _driverAcceptCounter({
     required Load load,
     required Offer myOffer,
@@ -156,7 +156,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       final status = (data["status"] ?? "open").toString();
       final acceptedOfferId = data["acceptedOfferId"];
 
-      // ✅ Başkası aldıysa / ilan kapalıysa engelle
       if (status != "open" && status != "matched") {
         throw Exception("Bu ilan artık uygun değil.");
       }
@@ -164,10 +163,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
         throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
       }
 
-      // ✅ benim teklifimi accepted
       tx.update(offerRef, {"status": "accepted"});
 
-      // ✅ load'u matched yap
       tx.update(loadRef, {
         "status": "matched",
         "acceptedOfferId": myOffer.id,
@@ -175,7 +172,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       });
     });
 
-    // ✅ transaction sonrası diğer teklifleri reddet
     final others = await db.collection("offers").where("loadId", isEqualTo: load.id).get();
     final batch = db.batch();
     for (final d in others.docs) {
@@ -185,7 +181,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     await batch.commit();
   }
 
-  // ✅ driver karşı teklifi reddedince: teklif silinsin
   Future<void> _driverRejectCounter({required Offer myOffer}) async {
     await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
       "status": "driver_rejected_counter",
@@ -213,12 +208,12 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   Future<void> _cleanupExpiredLoads(List<Load> loads) async {
-    if (appState.role != "shipper") return;
+    if (appState.role != "shipper" && !appState.isAdmin) return;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null && !appState.isAdmin) return;
 
-    final myExpired = loads.where((l) => l.shipperId == uid && _isExpiredForDelete(l)).toList();
+    final myExpired = loads.where((l) => (l.shipperId == uid || appState.isAdmin) && _isExpiredForDelete(l)).toList();
     if (myExpired.isEmpty) return;
 
     for (final l in myExpired) {
@@ -228,14 +223,12 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     }
   }
 
-  // ---------- UI helpers ----------
-
-  Widget _pill({required IconData icon, required String text}) {
+  Widget _pill({required IconData icon, required String text, Color? color}) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: color ?? Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant),
         boxShadow: [
@@ -298,7 +291,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   void _openJobSheet(Load l, LatLng dest) {
-    final isDriver = appState.role == "driver";
+    final isDriver = _isCurrentlyDriver;
     final priceCtrl = TextEditingController(text: "3000");
     final noteCtrl = TextEditingController();
 
@@ -382,7 +375,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                   if (isDriver) ...[
                     Builder(
                       builder: (context) {
-                        final uid = FirebaseAuth.instance.currentUser?.uid;
+                        final uid = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
 
                         final Stream<QuerySnapshot<Map<String, dynamic>>> myOfferStream = (uid == null)
                             ? const Stream.empty()
@@ -406,31 +399,21 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                             }
 
                             final docs = snap.data!.docs.toList();
-
-                            // ✅ createdAt'e göre (client-side) sırala: en yeni en üstte
                             docs.sort((a, b) {
                               final ta = (a.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
                               final tb = (b.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
                               return tb.compareTo(ta);
                             });
 
-                            // ✅ Tüm teklif geçmişin (en yeni -> en eski)
                             final myOffers = docs.map((d) => Offer.fromDoc(d)).toList();
-
-                            // ✅ En son teklifin
                             final Offer? lastOffer = myOffers.isNotEmpty ? myOffers.first : null;
 
-                            // ✅ SABİT FİYAT mı?
                             final bool isFixed = (l.priceType == "fixed" && l.fixedPrice != null);
                             final int fixedPrice = l.fixedPrice ?? 0;
 
-                            // ------------------------------------------------------------
-                            // ✅ SABİT İLAN: TEKLİF FORMU GÖSTERME -> "ÜCRETİ KABUL ET"
-                            // ------------------------------------------------------------
                             if (isFixed) {
-                              // Eğer daha önce kabul ettiyse / zaten matched ise
                               final bool alreadyAcceptedByMe = lastOffer?.status == "accepted";
-                              final bool notOpen = l.status != "open"; // marker zaten open gösteriyor ama garanti
+                              final bool notOpen = l.status != "open";
 
                               return Card(
                                 elevation: 0,
@@ -497,13 +480,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                               : () async {
                                             try {
                                               final db = FirebaseFirestore.instance;
-
-                                              // ✅ Sabit ilanı kabul et: teklif oluştur + load'u matched yap (transaction)
                                               final newOfferRef = db.collection("offers").doc();
 
                                               await db.runTransaction((tx) async {
                                                 final loadRef = db.collection("loads").doc(l.id);
-
                                                 final loadSnap = await tx.get(loadRef);
                                                 if (!loadSnap.exists) throw Exception("İlan bulunamadı");
 
@@ -535,7 +515,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                                 });
                                               });
 
-                                              // ✅ diğer teklifleri reddet
                                               final others = await db
                                                   .collection("offers")
                                                   .where("loadId", isEqualTo: l.id)
@@ -563,15 +542,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                               );
                             }
 
-                            // ------------------------------------------------------------
-                            // ✅ TEKLİF USULÜ: reddedildiyse tekrar teklif + geçmiş göster
-                            // ------------------------------------------------------------
                             final st = lastOffer?.status;
                             final bool canSendNewOffer = (lastOffer == null) ||
                                 (st == "rejected") ||
                                 (st == "driver_rejected_counter");
 
-                            // Reddedildiyse: geçmiş kalsın ama yeni teklif formu açılsın
                             if (canSendNewOffer) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,7 +601,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                     label: const Text("Teklifi Gönder"),
                                     onPressed: () async {
                                       try {
-                                        final uid2 = FirebaseAuth.instance.currentUser?.uid;
+                                        final uid2 = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
                                         if (uid2 == null) {
                                           _snack("Oturum yok. Tekrar giriş yap.");
                                           return;
@@ -660,7 +635,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                               );
                             }
 
-                            // Son teklif rejected değilse: mevcut teklif kartı
                             final myOffer = lastOffer!;
                             final counter = myOffer.counterPrice;
                             final counterNote = (myOffer.counterNote ?? "").trim();
@@ -697,7 +671,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     if (myOffers.isNotEmpty) ...[
-                                      const Text("Geçmiş Tekliflerin", style: TextStyle(fontWeight: FontWeight.w900)),
+                                      const Text("Geçmiş İşlemlerin", style: TextStyle(fontWeight: FontWeight.w900)),
                                       const SizedBox(height: 8),
                                       ...myOffers.take(3).map((o) {
                                         final st = o.status;
@@ -739,7 +713,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                         _statusChip(statusText),
                                       ],
                                     ),
-
 
                                     if (counter != null) ...[
                                       const SizedBox(height: 12),
@@ -838,9 +811,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     }
   }
 
-  // ✅ HARİTADAKİ HAREKETLİ PANEL
   Widget _buildDraggablePanel() {
-    final isDriver = appState.role == "driver";
+    final isDriver = _isCurrentlyDriver;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.12,
@@ -902,106 +874,154 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     final loadsStream = FirebaseFirestore.instance.collection("loads").snapshots();
 
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: loadsStream,
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return Center(child: Text("Harita veri hatası: ${snap.error}"));
-          }
-          if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final allLoads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
-
-          // ✅ Driver tarafında: teslim tarihinden 1 hafta geçen ilanları gösterme
-          final loads = allLoads.where((l) => !_isExpiredForDelete(l)).toList();
-
-          // ✅ Shipper uygulamaya girince kendi süresi geçen ilanlarını temizle
-          if (!_cleanupRan) {
-            _cleanupRan = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _cleanupExpiredLoads(allLoads);
-            });
-          }
-
-          return Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: trCenter,
-                  initialZoom: 5.3,
-                  minZoom: 3,
-                  maxZoom: 19,
-                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    userAgentPackageName: "com.example.nakliyeyg",
-                  ),
-                  MarkerLayer(markers: _buildMarkers(loads)),
-                ],
-              ),
-
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _pill(
-                          icon: Icons.map_outlined,
-                          text: "Merhaba, ${appState.displayName}",
+      body: ListenableBuilder( 
+        listenable: appState,
+        builder: (context, _) {
+          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: loadsStream,
+            builder: (context, snap) {
+              if (snap.hasError) {
+                // ✅ Hata detayını göster (Permission denied vb.)
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Harita Veri Hatası",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snap.error.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 24),
+                        if (appState.isAdmin)
+                          const Text(
+                            "İpucu: Firebase Firestore kurallarında (Rules) okuma izni kapalı olabilir. Admin auth olmadan girdiğinde bu hatayı alabilir.",
+                            style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              if (!snap.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final allLoads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+              final loads = allLoads.where((l) => !_isExpiredForDelete(l)).toList();
+
+              if (!_cleanupRan) {
+                _cleanupRan = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _cleanupExpiredLoads(allLoads);
+                });
+              }
+
+              return Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: trCenter,
+                      initialZoom: 5.3,
+                      minZoom: 3,
+                      maxZoom: 19,
+                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        userAgentPackageName: "com.example.nakliyeyg",
                       ),
-                      const SizedBox(width: 10),
-                      if (_locLoading) _pill(icon: Icons.gps_fixed, text: "GPS…"),
-                      if (!_locLoading && _pos == null) _pill(icon: Icons.gps_off, text: "GPS yok"),
-                      const SizedBox(width: 10),
-                      IconButton.filledTonal(
-                        tooltip: "Profil",
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                          );
-                        },
-                        icon: const Icon(Icons.person),
-                      ),
+                      MarkerLayer(markers: _buildMarkers(loads)),
                     ],
                   ),
-                ),
-              ),
 
-              Positioned(
-                right: 14,
-                bottom: 18 + 80, // panel üstüne binsin diye biraz yukarı
-                child: FloatingActionButton(
-                  onPressed: () {
-                    if (_pos == null) {
-                      _initLocation();
-                    } else {
-                      _goToMyLocation();
-                    }
-                  },
-                  child: const Icon(Icons.my_location),
-                ),
-              ),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _pill(
+                                  icon: Icons.map_outlined,
+                                  text: "Merhaba, ${appState.displayName}",
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              if (appState.isAdmin)
+                                IconButton.filled(
+                                  onPressed: () {
+                                    appState.toggleAdminRole();
+                                    _snack("Mod: ${appState.adminViewRole == 'driver' ? 'Şoför' : 'Yük Sahibi'}");
+                                  },
+                                  icon: const Icon(Icons.swap_horiz),
+                                  tooltip: "Rol Değiştir",
+                                  style: IconButton.styleFrom(backgroundColor: Colors.orange),
+                                ),
+                              const SizedBox(width: 10),
+                              IconButton.filledTonal(
+                                tooltip: "Profil",
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                                  );
+                                },
+                                icon: const Icon(Icons.person),
+                              ),
+                            ],
+                          ),
+                          if (appState.isAdmin)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: _pill(
+                                icon: Icons.security,
+                                text: "YÖNETİCİ MODU (${appState.adminViewRole.toUpperCase()})",
+                                color: Colors.orange.withOpacity(0.9),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-              // ✅ EN ÖNEMLİ: draggable panel en sonda (üstte görünür)
-              _buildDraggablePanel(),
+                  Positioned(
+                    right: 14,
+                    bottom: 18 + 80,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        if (_pos == null) {
+                          _initLocation();
+                        } else {
+                          _goToMyLocation();
+                        }
+                      },
+                      child: const Icon(Icons.my_location),
+                    ),
+                  ),
 
-            ],
+                  _buildDraggablePanel(),
+                ],
+              );
+            },
           );
-        },
+        }
       ),
     );
   }
 }
-
-// =================== DRIVER PANEL ===================
 
 class _DriverActiveJobsSheet extends StatelessWidget {
   final ScrollController scrollController;
@@ -1014,7 +1034,7 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
     if (uid == null) {
       return ListView(
         controller: scrollController,
@@ -1101,7 +1121,6 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -1208,15 +1227,12 @@ class _DriverActiveJobsSheet extends StatelessWidget {
   }
 }
 
-// =================== SHIPPER PANEL ===================
-
 class _ShipperLoadsSheet extends StatelessWidget {
   final ScrollController scrollController;
   const _ShipperLoadsSheet({required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Draggable sheet ile aynı controller'ı kullan
     return OffersInboxScreen(controller: scrollController);
   }
 }

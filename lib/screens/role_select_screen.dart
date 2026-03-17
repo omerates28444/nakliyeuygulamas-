@@ -9,127 +9,237 @@ class RoleSelectScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-          children: [
-            const SizedBox(height: 6),
-            Text(
-              "NakliyeYG",
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              "Devam etmek için rolünü seç.",
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 18),
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) {
+        final isEn = appState.language == "en";
 
-            _RoleCard(
-              title: "Şoför",
-              subtitle: "Haritadan işleri gör, teklif ver, kabul edilince yol tarifini aç.",
-              icon: Icons.local_shipping_outlined,
-              color: cs.primaryContainer,
-              onTap: () {
-                appState.setRole("driver");
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-              },
-            ),
-            const SizedBox(height: 12),
-            _RoleCard(
-              title: "Yük Sahibi",
-              subtitle: "İlan ver, gelen teklifleri gör, karşı teklif ver ve işi eşleştir.",
-              icon: Icons.inventory_2_outlined,
-              color: cs.secondaryContainer,
-              onTap: () {
-                appState.setRole("shipper");
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-              },
-            ),
+        // ✅ Basit Dil Map'i
+        final texts = {
+          "title": isEn ? "RoadMap" : "RoadMap",
+          "subtitle": isEn ? "Global Logistics Network" : "Küresel Lojistik Ağı",
+          "welcome": isEn ? "Welcome back.\nPlease select your portal to continue." : "Tekrar hoş geldiniz.\nDevam etmek için bir portal seçin.",
+          "carrierTitle": isEn ? "Carrier Portal" : "Nakliyeci Portalı",
+          "carrierSub": isEn ? "Find loads, manage trips, and grow your fleet." : "Yük bulun, seferleri yönetin ve filonuzu büyütün.",
+          "shipperTitle": isEn ? "Shipper Portal" : "Yük Sahibi Portalı",
+          "shipperSub": isEn ? "Post shipments, track deliveries, and optimize costs." : "Yük ilanı verin, teslimatları takip edin ve maliyetleri düşürün.",
+          "footer": isEn ? "Trusted by 10,000+ professionals worldwide." : "Dünya çapında 10.000+ profesyonel tarafından güvenilen."
+        };
 
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.outlineVariant),
-                borderRadius: BorderRadius.circular(14),
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              Positioned(
+                top: -100,
+                right: -100,
+                child: CircleAvatar(
+                  radius: 150,
+                  backgroundColor: cs.primary.withOpacity(0.05),
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.lock_outline, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      "Rol seçimi sadece arayüz yönlendirmesi içindir. Hesap rolü Firestore profilinden doğrulanır.",
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 40),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // ✅ Expanded eklendi: Metinler sığmadığında ikonları sıkıştırmaz
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  texts["title"]!,
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                    color: cs.primary,
+                                    letterSpacing: -1,
+                                  ),
+                                ),
+                                Text(
+                                  texts["subtitle"]!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis, // Sığmazsa üç nokta koy
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            children: [
+                              // ✅ DİL SEÇİMİ (TR / EN)
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  appState.setLanguage(isEn ? "tr" : "en");
+                                },
+                                child: Text(isEn ? "TR" : "EN", style: const TextStyle(fontWeight: FontWeight.w900)),
+                              ),
+                              // ✅ Admin İkonu
+                              IconButton(
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.all(8),
+                                onPressed: () {
+                                  appState.setRole("admin");
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                  );
+                                },
+                                icon: Icon(Icons.admin_panel_settings_outlined, color: cs.primary.withOpacity(0.5)),
+                                tooltip: isEn ? "Admin Access" : "Yönetici Erişimi",
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      const Spacer(),
+
+                      Text(
+                        texts["welcome"]!,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                          height: 1.2,
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      _ModernRoleCard(
+                        title: texts["carrierTitle"]!,
+                        subtitle: texts["carrierSub"]!,
+                        icon: Icons.local_shipping_rounded,
+                        onTap: () {
+                          appState.setRole("driver");
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _ModernRoleCard(
+                        title: texts["shipperTitle"]!,
+                        subtitle: texts["shipperSub"]!,
+                        icon: Icons.inventory_2_rounded,
+                        onTap: () {
+                          appState.setRole("shipper");
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                        },
+                      ),
+
+                      const Spacer(flex: 2),
+
+                      Center(
+                        child: Text(
+                          texts["footer"]!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class _RoleCard extends StatelessWidget {
+class _ModernRoleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color color;
   final VoidCallback onTap;
 
-  const _RoleCard({
+  const _ModernRoleCard({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
+
+    return GestureDetector(
       onTap: onTap,
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: cs.outlineVariant),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: cs.outlineVariant.withOpacity(0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: color,
-                ),
-                child: Icon(icon, size: 26),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: TextStyle(color: cs.onSurfaceVariant)),
-                  ],
-                ),
+              child: Icon(icon, color: cs.primary, size: 28),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
-          ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: cs.primary.withOpacity(0.3)),
+          ],
         ),
       ),
     );
