@@ -21,6 +21,7 @@ import '../services/load_service.dart';
 import 'profile_screen.dart';
 import 'chat_screen.dart';
 import 'chats_list_screen.dart';
+import 'ecmr_signature_screen.dart';
 
 class OsmMapHomeScreen extends StatefulWidget {
   const OsmMapHomeScreen({super.key});
@@ -1306,6 +1307,55 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                           },
                           child: const Text("İptal Et", style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
+                      ),
+
+                      const SizedBox(height: 12), // 🟢 Araya boşluk
+
+                      // 🟢 DİJİTAL İRSALİYE (e-CMR) İMZA ALANI EKLENDİ 🟢
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance.collection("loads").doc(j.id).snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox();
+                          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+
+                          final bool driverSigned = data["ecmrSignedBy_driver"] == true;
+                          final bool shipperSigned = data["ecmrSignedBy_shipper"] == true;
+                          final String? pdfUrl = data["ecmrUrl_driver"] ?? data["ecmrUrl_shipper"];
+
+                          // DURUM 1: Şoför henüz imzalamadı
+                          if (!driverSigned) {
+                            return SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(backgroundColor: Colors.blue.shade800, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EcmrSignatureScreen(loadId: j.id, role: "driver"))),
+                                icon: const Icon(Icons.draw, color: Colors.white),
+                                label: const Text("Sözleşmeyi İmzala", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            );
+                          }
+                          // DURUM 2: Şoför imzaladı ama yük sahibini bekliyor
+                          else if (!shipperSigned) {
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.hourglass_empty, size: 18, color: Colors.grey), SizedBox(width: 8), Text("Yük Sahibinin İmzası Bekleniyor", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold))]),
+                            );
+                          }
+                          // DURUM 3: Tamamlandı
+                          else {
+                            return SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                onPressed: () => pdfUrl != null ? launchUrl(Uri.parse(pdfUrl), mode: LaunchMode.externalApplication) : null,
+                                icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                                label: const Text("Sözleşmeyi İndir (PDF)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),

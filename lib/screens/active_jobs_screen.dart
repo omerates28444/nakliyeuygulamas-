@@ -6,11 +6,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'ecmr_signature_screen.dart'; // 🟢 İMZA EKRANI EKLENDİ
 import '../models/load.dart';
 import '../services/auth_service.dart';
 
 class ActiveJobsScreen extends StatelessWidget {
-  final void Function(String jobId) onOpenOnMap; // (artık zorunlu değil ama dursun)
+  final void Function(String jobId) onOpenOnMap;
 
   const ActiveJobsScreen({super.key, required this.onOpenOnMap});
 
@@ -24,7 +25,7 @@ class ActiveJobsScreen extends StatelessWidget {
 
     final q = FirebaseFirestore.instance
         .collection("loads")
-        .where("acceptedDriverId", isEqualTo: uid)
+        .where("acceptedDriverId", isEqualTo: uid) // Bu sayfa sadece şoförler için
         .where("status", whereIn: ["matched", "delivered_pending"])
         .orderBy("createdAt", descending: true);
 
@@ -116,6 +117,7 @@ class ActiveJobsScreen extends StatelessWidget {
 
                         const SizedBox(height: 12),
 
+                        // BİRİNCİ SATIR BUTONLAR (Yol Tarifi, İşi Bitir, İptal)
                         Row(
                           children: [
                             Expanded(
@@ -212,6 +214,64 @@ class ActiveJobsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+
+                        // 🟢 İKİNCİ SATIR: AKILLI DİJİTAL İRSALİYE BUTONU
+                        const SizedBox(height: 12),
+                        StreamBuilder<DocumentSnapshot>(
+                          stream: FirebaseFirestore.instance.collection("loads").doc(j.id).snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) return const SizedBox();
+                            final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+
+                            final bool driverSigned = data["ecmrSignedBy_driver"] == true;
+                            final bool shipperSigned = data["ecmrSignedBy_shipper"] == true;
+                            final String? pdfUrl = data["ecmrUrl_driver"] ?? data["ecmrUrl_shipper"];
+
+                            if (!driverSigned) {
+                              return SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.blue.shade800,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => EcmrSignatureScreen(loadId: j.id, role: "driver")),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.draw, size: 20, color: Colors.white),
+                                  label: const Text("Dijital Sözleşmeyi İmzala", style: TextStyle(color: Colors.white)),
+                                ),
+                              );
+                            } else if (driverSigned && !shipperSigned) {
+                              return SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(backgroundColor: Colors.grey.shade200, foregroundColor: Colors.grey.shade600),
+                                  onPressed: null,
+                                  icon: const Icon(Icons.hourglass_empty),
+                                  label: const Text("Yük Sahibinin İmzası Bekleniyor"),
+                                ),
+                              );
+                            } else {
+                              return SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(backgroundColor: Colors.green.shade600),
+                                  onPressed: () async {
+                                    if (pdfUrl != null) await launchUrl(Uri.parse(pdfUrl), mode: LaunchMode.externalApplication);
+                                  },
+                                  icon: const Icon(Icons.picture_as_pdf),
+                                  label: const Text("Sözleşmeyi İndir (PDF)"),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+
                       ],
                     ),
                   ),
@@ -247,7 +307,7 @@ class ActiveJobsScreen extends StatelessWidget {
     }
   }
 
-  // ✅ Şoför teslim etti bildirimi (iş: onay bekliyor)
+  // Şoför teslim etti bildirimi (iş: onay bekliyor)
   Future<void> _markDelivered({required String loadId}) async {
     final db = FirebaseFirestore.instance;
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -298,14 +358,14 @@ class ActiveJobsScreen extends StatelessWidget {
       throw Exception("Bu işi iptal etme yetkin yok");
     }
 
-    // ✅ 1) İşi tekrar open yap
+    // 1) İşi tekrar open yap
     await ref.update({
       "status": "open",
       "acceptedOfferId": FieldValue.delete(),
       "acceptedDriverId": FieldValue.delete(),
     });
 
-    // ✅ 2) O işe ait tüm teklifleri SİL (sıfırdan teklif verilebilsin)
+    // 2) O işe ait tüm teklifleri SİL (sıfırdan teklif verilebilsin)
     final offers = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
     final batch = db.batch();
     for (final d in offers.docs) {
@@ -314,4 +374,3 @@ class ActiveJobsScreen extends StatelessWidget {
     await batch.commit();
   }
 }
-

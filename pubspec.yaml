@@ -35,6 +35,12 @@ dependencies:
   # 🖼️ Fotoğraf seçme
   image_picker: ^1.1.2
 
+  # 📝 Dijital İrsaliye (e-CMR) ve İmza
+  signature: ^5.4.0
+  pdf: ^3.11.0
+  printing: ^5.11.1
+  path_provider: ^2.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -48,7 +54,15 @@ flutter:
     - assets/icon.png
     - assets/logo.png
 
+# 🟢 İKON AYARLARI 🟢
 flutter_launcher_icons:
-  android: true
+  android: "ic_launcher"
   ios: false
-  image_path: assets/icon.png
+  image_path: "assets/icon.png"
+
+  # Logonun arka planındaki o koyu lacivert rengi buraya yazdık.
+  # Android bu rengi alıp, yuvarlak çerçevenin içindeki beyazlıkları dolduracak.
+  adaptive_icon_background: "#040E27"
+
+  # Logonun kendisini de ön plana (merkeze) koyuyoruz.
+  adaptive_icon_foreground: "assets/icon.png"
