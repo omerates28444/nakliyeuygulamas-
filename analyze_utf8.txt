@@ -1,0 +1,110 @@
+﻿Analyzing nakliyeuygulamas-...                                  
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:36:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:69:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:162:38 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\active_jobs_screen.dart:33:11 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_screen.dart:59:34 - deprecated_member_use
+   info - The imported package 'cloud_firestore' isn't a dependency of the importing package - lib\screens\admin_dashboard_screen.dart:1:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:cloud_firestore/cloud_firestore.dart' - lib\screens\admin_dashboard_screen.dart:1:8 - uri_does_not_exist
+warning - The value of the local variable 'cs' isn't used - lib\screens\admin_dashboard_screen.dart:12:11 - unused_local_variable
+  error - Undefined name 'FirebaseFirestore' - lib\screens\admin_dashboard_screen.dart:14:16 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\admin_dashboard_screen.dart:46:25 - non_type_as_type_argument
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\admin_dashboard_screen.dart:49:36 - non_type_as_type_argument
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:92:139 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:105:139 - deprecated_member_use
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\admin_dashboard_screen.dart:106:34 - non_type_as_type_argument
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:153:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:154:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:178:61 - deprecated_member_use
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\screens\app_shell.dart:13:7 - deprecated_member_use
+   info - The imported package 'cloud_firestore' isn't a dependency of the importing package - lib\screens\load_create_screen.dart:1:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:cloud_firestore/cloud_firestore.dart' - lib\screens\load_create_screen.dart:1:8 - uri_does_not_exist
+   info - The imported package 'firebase_auth' isn't a dependency of the importing package - lib\screens\load_create_screen.dart:2:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:firebase_auth/firebase_auth.dart' - lib\screens\load_create_screen.dart:2:8 - uri_does_not_exist
+  error - Undefined name 'FirebaseAuth' - lib\screens\load_create_screen.dart:48:19 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\load_create_screen.dart:83:13 - undefined_identifier
+  error - Undefined name 'Timestamp' - lib\screens\load_create_screen.dart:86:23 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\load_create_screen.dart:92:22 - undefined_identifier
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\screens\login_screen.dart:210:7 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:49:11 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps - lib\screens\offers_inbox_screen.dart:260:29 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\offers_inbox_screen.dart:418:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\offers_inbox_screen.dart:512:58 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:650:55 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:679:55 - curly_braces_in_flow_control_structures
+   info - The imported package 'cloud_firestore' isn't a dependency of the importing package - lib\screens\osm_map_home_screen.dart:1:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:cloud_firestore/cloud_firestore.dart' - lib\screens\osm_map_home_screen.dart:1:8 - uri_does_not_exist
+   info - The imported package 'firebase_auth' isn't a dependency of the importing package - lib\screens\osm_map_home_screen.dart:7:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:firebase_auth/firebase_auth.dart' - lib\screens\osm_map_home_screen.dart:7:8 - uri_does_not_exist
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:42:17 - undefined_identifier
+  error - The method 'fromDoc' isn't defined for the type 'Load' - lib\screens\osm_map_home_screen.dart:44:22 - undefined_method
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\osm_map_home_screen.dart:107:34 - deprecated_member_use
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:150:16 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:195:11 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:200:27 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:210:16 - undefined_identifier
+  error - Undefined name 'FirebaseAuth' - lib\screens\osm_map_home_screen.dart:227:17 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\osm_map_home_screen.dart:249:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\osm_map_home_screen.dart:256:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\osm_map_home_screen.dart:296:28 - deprecated_member_use
+  error - Undefined name 'FirebaseAuth' - lib\screens\osm_map_home_screen.dart:403:37 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:405:38 - non_type_as_type_argument
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:408:35 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:415:29 - non_type_as_type_argument
+  error - The name 'Timestamp' isn't a type, so it can't be used in an 'as' expression - lib\screens\osm_map_home_screen.dart:433:68 - cast_to_non_type
+  error - The name 'Timestamp' isn't a type, so it can't be used in an 'as' expression - lib\screens\osm_map_home_screen.dart:436:68 - cast_to_non_type
+  error - The method 'fromDoc' isn't defined for the type 'Offer' - lib\screens\osm_map_home_screen.dart:444:55 - undefined_method
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:548:64 - undefined_identifier
+   info - Statements in an if should be enclosed in a block - lib\screens\osm_map_home_screen.dart:565:57 - curly_braces_in_flow_control_structures
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:601:70 - undefined_identifier
+   info - Statements in an if should be enclosed in a block - lib\screens\osm_map_home_screen.dart:625:57 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\osm_map_home_screen.dart:634:67 - use_build_context_synchronously
+  error - Undefined name 'FirebaseAuth' - lib\screens\osm_map_home_screen.dart:724:54 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:741:47 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:751:47 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\osm_map_home_screen.dart:755:55 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\osm_map_home_screen.dart:893:71 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\osm_map_home_screen.dart:1006:41 - deprecated_member_use
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1033:9 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:1036:27 - non_type_as_type_argument
+  error - The method 'fromDoc' isn't defined for the type 'Load' - lib\screens\osm_map_home_screen.dart:1046:60 - undefined_method
+   info - Use 'const' with the constructor to improve performance - lib\screens\osm_map_home_screen.dart:1063:26 - prefer_const_constructors
+  error - Undefined name 'FirebaseAuth' - lib\screens\osm_map_home_screen.dart:1152:17 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1165:15 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:1172:26 - non_type_as_type_argument
+  error - The method 'fromDoc' isn't defined for the type 'Load' - lib\screens\osm_map_home_screen.dart:1198:54 - undefined_method
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1288:45 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:1294:45 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1317:35 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:1322:50 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\osm_map_home_screen.dart:1323:51 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1326:50 - undefined_identifier
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1331:43 - undefined_identifier
+warning - The member 'notifyListeners' can only be used within 'package:flutter/src/foundation/change_notifier.dart' or a test - lib\screens\profile_screen.dart:165:16 - invalid_use_of_visible_for_testing_member
+warning - The member 'notifyListeners' can only be used within instance members of subclasses of 'ChangeNotifier' - lib\screens\profile_screen.dart:165:16 - invalid_use_of_protected_member
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:217:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:258:50 - use_build_context_synchronously
+warning - The value of the local variable 'isDriver' isn't used - lib\screens\profile_screen.dart:275:11 - unused_local_variable
+warning - The value of the local variable 'cs' isn't used - lib\screens\profile_screen.dart:276:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:363:36 - deprecated_member_use
+warning - The '!' will have no effect because the receiver can't be null - lib\screens\profile_screen.dart:499:28 - unnecessary_non_null_assertion
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:38:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:105:99 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:156:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:198:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:201:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:212:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:241:79 - deprecated_member_use
+   info - The imported package 'cloud_firestore' isn't a dependency of the importing package - lib\screens\user_management_screen.dart:1:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:cloud_firestore/cloud_firestore.dart' - lib\screens\user_management_screen.dart:1:8 - uri_does_not_exist
+  error - Undefined name 'FirebaseFirestore' - lib\screens\user_management_screen.dart:11:16 - undefined_identifier
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\user_management_screen.dart:17:27 - non_type_as_type_argument
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:44:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:50:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:50:102 - deprecated_member_use
+  error - Undefined name 'FirebaseFirestore' - lib\screens\user_management_screen.dart:91:13 - undefined_identifier
+  error - Undefined name 'FieldValue' - lib\screens\user_management_screen.dart:93:23 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\empty_state.dart:27:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\status_chip.dart:61:18 - deprecated_member_use
+

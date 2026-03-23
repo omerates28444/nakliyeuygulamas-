@@ -1,11 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../services/auth_service.dart';
 import '../models/load.dart';
-import '../app_state.dart';
 import 'role_select_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,7 +17,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<void> _profileFuture;
   final auth = AuthService();
-  final db = FirebaseFirestore.instance;
+  final db = Supabase.instance.client;
   @override
   void initState() {
     super.initState();
@@ -54,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<bool> _reauthWithPassword(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = db.auth.currentUser;
     if (user == null) return false;
 
     final passCtrl = TextEditingController();
@@ -96,8 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final email = user.email!;
-      final cred = EmailAuthProvider.credential(email: email, password: pass);
-      await user.reauthenticateWithCredential(cred);
+      await db.auth.signInWithPassword(email: email, password: pass);
       return true;
     } catch (e) {
       _snack("Doğrulama başarısız");
@@ -106,11 +104,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final uid = auth.currentUser?.uid;
+    final uid = auth.currentUser?.id;
     if (uid == null) return;
 
-    final snap = await db.collection("users").doc(uid).get();
-    final data = snap.data() ?? {};
+    final data =
+        await db.from("users").select().eq("id", uid).maybeSingle() ?? {};
 
     nameCtrl.text = (data["name"] ?? "").toString();
     phoneCtrl.text = (data["phone"] ?? "").toString();
@@ -129,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => saving = true);
 
     try {
-      final uid = auth.currentUser?.uid;
+      final uid = auth.currentUser?.id;
       if (uid == null) throw Exception("Oturum yok");
 
       final isDriver = appState.role == "driver";
@@ -146,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         "name": name,
         "phone": phone,
         "city": city,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": DateTime.now().toUtc().toIso8601String(),
       };
 
       if (isDriver) {
@@ -161,10 +159,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         };
       }
 
-      await db.collection("users").doc(uid).update(update);
+      if (!context.mounted) return;
+      await db.from("users").update(update).eq("id", uid);
 
       // AppState isim güncelle
       appState.displayName = name;
+      // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
       appState.notifyListeners();
 
       _snack("Bilgiler güncellendi ✅");
@@ -217,10 +217,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (p1 != p2) return _snack("Şifreler eşleşmiyor");
 
     try {
+      if (!context.mounted) return;
       final okReauth = await _reauthWithPassword(context);
       if (!okReauth) return;
 
-      await FirebaseAuth.instance.currentUser!.updatePassword(p1);
+      await db.auth.updateUser(UserAttributes(password: p1));
       _snack("Şifre güncellendi ✅");
     } catch (e) {
       _snack("Şifre değiştirilemedi");
@@ -258,11 +259,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
+      if (!context.mounted) return;
       final okReauth = await _reauthWithPassword(context);
       if (!okReauth) return;
 
-      await FirebaseAuth.instance.currentUser!
-          .verifyBeforeUpdateEmail(newEmail);
+      await db.auth.updateUser(UserAttributes(email: newEmail));
 
       _snack(
           "Doğrulama maili gönderildi ✅ Mailden onaylayınca e-posta değişir.");
@@ -273,11 +274,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final uid = auth.currentUser?.uid;
+    final uid = auth.currentUser?.id;
     if (uid == null) return const Center(child: Text("Oturum yok."));
 
-    final isDriver = appState.role == "driver";
-    final cs = Theme.of(context).colorScheme;
+    // final isDriver = appState.role == "driver";
+    // final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -341,13 +342,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
-                      FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                        future: FirebaseFirestore.instance
-                            .collection("users")
-                            .doc(AuthService().currentUser?.uid)
-                            .get(),
+                      FutureBuilder<Map<String, dynamic>?>(
+                        future: db
+                            .from("users")
+                            .select()
+                            .eq("id", AuthService().currentUser?.id ?? "")
+                            .maybeSingle(),
                         builder: (context, snap) {
-                          final d = snap.data?.data() ?? {};
+                          final d = snap.data ?? {};
                           final avg = (d["ratingAvg"] is num)
                               ? (d["ratingAvg"] as num).toDouble()
                               : 0.0;
@@ -493,23 +495,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 8),
 
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection("loads")
-                    .where(
+              StreamBuilder<List<Map<String, dynamic>>>(
+                stream: db
+                    .from("loads")
+                    .stream(primaryKey: ['id'])
+                    .eq(
                         appState.role == "driver"
                             ? "acceptedDriverId"
                             : "shipperId",
-                        isEqualTo: AuthService().currentUser?.uid)
-                    .where("status", isEqualTo: "done")
-                    .orderBy("doneAt", descending: true)
-                    .snapshots(),
+                        AuthService().currentUser?.id ?? "")
+                    .order("doneAt", ascending: false),
                 builder: (context, snap) {
                   if (snap.hasError) return Text("Hata: ${snap.error}");
                   if (!snap.hasData) return const SizedBox();
 
+                  final allJobs =
+                      snap.data!.map((d) => Load.fromMap(d)).toList();
                   final jobs =
-                      snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+                      allJobs.where((j) => j.status == "done").toList();
 
                   if (jobs.isEmpty) {
                     return Padding(

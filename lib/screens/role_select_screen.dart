@@ -35,7 +35,7 @@ class RoleSelectScreen extends StatelessWidget {
                 right: -100,
                 child: CircleAvatar(
                   radius: 150,
-                  backgroundColor: cs.primary.withOpacity(0.05),
+                  backgroundColor: cs.primary.withValues(alpha: 0.05),
                 ),
               ),
 
@@ -97,12 +97,13 @@ class RoleSelectScreen extends StatelessWidget {
                                 padding: const EdgeInsets.all(8),
                                 onPressed: () {
                                   appState.setRole("admin");
-                                  Navigator.push(
+                                  // ignore: use_build_context_synchronously
+Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                                   );
                                 },
-                                icon: Icon(Icons.admin_panel_settings_outlined, color: cs.primary.withOpacity(0.5)),
+                                icon: Icon(Icons.admin_panel_settings_outlined, color: cs.primary.withValues(alpha: 0.5)),
                                 tooltip: isEn ? "Admin Access" : "Yönetici Erişimi",
                               ),
                             ],
@@ -130,7 +131,8 @@ class RoleSelectScreen extends StatelessWidget {
                         icon: Icons.local_shipping_rounded,
                         onTap: () {
                           appState.setRole("driver");
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                          // ignore: use_build_context_synchronously
+Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                         },
                       ),
 
@@ -142,7 +144,8 @@ class RoleSelectScreen extends StatelessWidget {
                         icon: Icons.inventory_2_rounded,
                         onTap: () {
                           appState.setRole("shipper");
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                          // ignore: use_build_context_synchronously
+Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                         },
                       ),
 
@@ -153,7 +156,7 @@ class RoleSelectScreen extends StatelessWidget {
                           texts["footer"]!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: cs.onSurfaceVariant.withOpacity(0.7),
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -195,10 +198,10 @@ class _ModernRoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: cs.outlineVariant.withOpacity(0.5)),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -209,7 +212,7 @@ class _ModernRoleCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: cs.primary.withOpacity(0.08),
+                color: cs.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: cs.primary, size: 28),
@@ -238,7 +241,7 @@ class _ModernRoleCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: cs.primary.withOpacity(0.3)),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: cs.primary.withValues(alpha: 0.3)),
           ],
         ),
       ),

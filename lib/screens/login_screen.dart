@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         if (loading) return;
         _goBackToRoleSelect();

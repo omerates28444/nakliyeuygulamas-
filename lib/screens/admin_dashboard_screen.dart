@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../app_state.dart';
 import 'osm_map_home_screen.dart';
@@ -9,9 +9,9 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    // final cs = Theme.of(context).colorScheme;
     final isEn = appState.language == "en";
-    final db = FirebaseFirestore.instance;
+    final db = Supabase.instance.client;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
@@ -35,7 +35,8 @@ class AdminDashboardScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.account_circle_outlined, color: Colors.black), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()))),
+          IconButton(icon: const Icon(Icons.account_circle_outlined, color: Colors.black), onPressed: () => // ignore: use_build_context_synchronously
+Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()))),
           const SizedBox(width: 8),
         ],
       ),
@@ -43,21 +44,20 @@ class AdminDashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         children: [
           // ✅ GERÇEK İSTATİSTİKLER (StreamBuilder ile)
-          StreamBuilder<QuerySnapshot>(
-            stream: db.collection("loads").snapshots(),
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: db.from("loads").stream(primaryKey: ['id']),
             builder: (context, loadSnap) {
-              return StreamBuilder<QuerySnapshot>(
-                stream: db.collection("users").snapshots(),
+              return StreamBuilder<List<Map<String, dynamic>>>(
+                stream: db.from("users").stream(primaryKey: ['id']),
                 builder: (context, userSnap) {
-                  final totalUsers = userSnap.data?.docs.length ?? 0;
-                  final allLoads = loadSnap.data?.docs ?? [];
+                  final totalUsers = userSnap.data?.length ?? 0;
+                  final allLoads = loadSnap.data ?? [];
                   final newLoads = allLoads.where((d) => d["status"] == "open").length;
                   
                   // Toplam Hacim Hesaplama (Done olan yüklerin fiyatlarını topla)
                   double totalRevenue = 0;
                   int doneCount = 0;
-                  for (var doc in allLoads) {
-                    final data = doc.data() as Map<String, dynamic>;
+                  for (var data in allLoads) {
                     if (data["status"] == "done") {
                       doneCount++;
                       totalRevenue += (data["fixedPrice"] ?? 0).toDouble();
@@ -89,11 +89,13 @@ class AdminDashboardScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
             child: Row(
               children: [
-                Expanded(child: _buildTestTab(title: isEn ? "Carrier" : "Şoför", icon: Icons.local_shipping, isSelected: appState.adminViewRole == "driver", onTap: () { appState.adminViewRole = "driver"; Navigator.push(context, MaterialPageRoute(builder: (_) => const OsmMapHomeScreen())); }, color: Colors.blue)),
-                Expanded(child: _buildTestTab(title: isEn ? "Shipper" : "Yük Sahibi", icon: Icons.inventory_2, isSelected: appState.adminViewRole == "shipper", onTap: () { appState.adminViewRole = "shipper"; Navigator.push(context, MaterialPageRoute(builder: (_) => const OsmMapHomeScreen())); }, color: Colors.deepPurple)),
+                Expanded(child: _buildTestTab(title: isEn ? "Carrier" : "Şoför", icon: Icons.local_shipping, isSelected: appState.adminViewRole == "driver", onTap: () { appState.adminViewRole = "driver"; // ignore: use_build_context_synchronously
+Navigator.push(context, MaterialPageRoute(builder: (_) => const OsmMapHomeScreen())); }, color: Colors.blue)),
+                Expanded(child: _buildTestTab(title: isEn ? "Shipper" : "Yük Sahibi", icon: Icons.inventory_2, isSelected: appState.adminViewRole == "shipper", onTap: () { appState.adminViewRole = "shipper"; // ignore: use_build_context_synchronously
+Navigator.push(context, MaterialPageRoute(builder: (_) => const OsmMapHomeScreen())); }, color: Colors.deepPurple)),
               ],
             ),
           ),
@@ -102,18 +104,17 @@ class AdminDashboardScreen extends StatelessWidget {
           _buildSectionHeader(isEn ? "Live Activity" : "Canlı Akış"),
           const SizedBox(height: 12),
           Container(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withOpacity(0.1))),
-            child: StreamBuilder<QuerySnapshot>(
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
               // En son eklenen 5 yükü getir
-              stream: db.collection("loads").orderBy("createdAt", descending: true).limit(5).snapshots(),
+              stream: db.from("loads").stream(primaryKey: ['id']).order("createdAt", ascending: false).limit(5),
               builder: (context, snap) {
                 if (!snap.hasData) return const LinearProgressIndicator();
-                final docs = snap.data!.docs;
+                final docs = snap.data!;
                 if (docs.isEmpty) return Padding(padding: const EdgeInsets.all(16), child: Text(isEn ? "No activity yet." : "Henüz hareket yok."));
 
                 return Column(
-                  children: docs.map((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
+                  children: docs.map((data) {
                     final from = data["fromCity"] ?? "?";
                     final to = data["toCity"] ?? "?";
                     return _buildActivityItem(
@@ -150,8 +151,8 @@ class AdminDashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.05)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,7 +176,7 @@ class AdminDashboardScreen extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(color: isSelected ? color.withOpacity(0.05) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: isSelected ? color.withValues(alpha: 0.05) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
             Icon(icon, color: isSelected ? color : Colors.grey, size: 20),

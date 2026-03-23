@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_state.dart';
 import 'screens/role_select_screen.dart';
@@ -9,7 +8,12 @@ import 'services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  await Supabase.initialize(
+    url: 'https://nkafkqugrkaocpqbyxfc.supabase.co',
+    anonKey: 'sb_publishable_cWS9qgD8XL3J0WhZmVZIrQ_mr5CukNU',
+  );
+  
   runApp(const MyApp());
 }
 
@@ -17,8 +21,8 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   Future<void> _hydrateAppStateFromFirestore(User user) async {
-    // users/{uid} profilini oku ve appState'i doldur
-    final data = await AuthService().getProfileByUid(user.uid);
+    // users tablosundan profilini oku ve appState'i doldur
+    final data = await AuthService().getProfileByUid(user.id);
 
     final role = (data['role'] ?? '').toString();
     final name = (data['name'] ?? 'Kullanıcı').toString();
@@ -74,8 +78,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+      home: StreamBuilder<AuthState>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Scaffold(
@@ -83,7 +87,8 @@ class MyApp extends StatelessWidget {
             );
           }
 
-          final user = snap.data;
+          final authState = snap.data;
+          final user = authState?.session?.user;
 
           if (user == null) {
             if (appState.isLoggedIn) appState.logout();

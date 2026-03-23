@@ -1,0 +1,33 @@
+﻿Analyzing nakliyeuygulamas-...                                  
+
+warning - The value of the local variable 'cs' isn't used - lib\screens\admin_dashboard_screen.dart:12:11 - unused_local_variable
+  error - The expression doesn't evaluate to a function, so it can't be invoked - lib\screens\app_shell.dart:13:31 - invocation_of_non_function_expression
+  error - Undefined name 'didPop' - lib\screens\app_shell.dart:13:32 - undefined_identifier
+  error - Undefined name 'result' - lib\screens\app_shell.dart:13:40 - undefined_identifier
+  error - Undefined name 'didPop' - lib\screens\app_shell.dart:13:49 - undefined_identifier
+  error - Expected to find ',' - lib\screens\app_shell.dart:13:57 - expected_token
+  error - Too many positional arguments: 0 expected, but 2 found - lib\screens\app_shell.dart:13:57 - extra_positional_arguments_could_be_named
+  error - Undefined name 'async' - lib\screens\app_shell.dart:13:57 - undefined_identifier
+  error - Expected to find ',' - lib\screens\app_shell.dart:13:63 - expected_token
+  error - Undefined name 'didPop' - lib\screens\app_shell.dart:14:13 - undefined_identifier
+  error - Unexpected text 'return' - lib\screens\app_shell.dart:14:21 - unexpected_token
+  error - Expected an identifier - lib\screens\app_shell.dart:14:27 - missing_identifier
+  error - Expected to find '}' - lib\screens\app_shell.dart:14:27 - expected_token
+  error - The expression doesn't evaluate to a function, so it can't be invoked - lib\screens\login_screen.dart:211:31 - invocation_of_non_function_expression
+  error - Undefined name 'didPop' - lib\screens\login_screen.dart:211:32 - undefined_identifier
+  error - Undefined name 'result' - lib\screens\login_screen.dart:211:40 - undefined_identifier
+  error - Undefined name 'didPop' - lib\screens\login_screen.dart:211:49 - undefined_identifier
+  error - Expected to find ',' - lib\screens\login_screen.dart:211:57 - expected_token
+  error - Too many positional arguments: 0 expected, but 2 found - lib\screens\login_screen.dart:211:57 - extra_positional_arguments_could_be_named
+  error - Undefined name 'async' - lib\screens\login_screen.dart:211:57 - undefined_identifier
+  error - Expected to find ',' - lib\screens\login_screen.dart:211:63 - expected_token
+  error - Undefined name 'didPop' - lib\screens\login_screen.dart:212:13 - undefined_identifier
+  error - Unexpected text 'return' - lib\screens\login_screen.dart:212:21 - unexpected_token
+  error - Expected an identifier - lib\screens\login_screen.dart:212:27 - missing_identifier
+  error - Expected to find '}' - lib\screens\login_screen.dart:212:27 - expected_token
+   info - Don't use 'BuildContext's across async gaps - lib\screens\offers_inbox_screen.dart:266:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:219:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:260:50 - use_build_context_synchronously
+warning - The value of the local variable 'isDriver' isn't used - lib\screens\profile_screen.dart:277:11 - unused_local_variable
+warning - The value of the local variable 'cs' isn't used - lib\screens\profile_screen.dart:278:11 - unused_local_variable
+

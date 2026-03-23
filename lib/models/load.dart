@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Load {
   final String id;
@@ -35,19 +34,18 @@ class Load {
     this.acceptedDriverId,
   });
 
-  // ✅ Firestore -> Load
-  factory Load.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
+  // ✅ Supabase Map -> Load
+  factory Load.fromMap(Map<String, dynamic> d) {
     return Load(
-      id: doc.id,
+      id: d['id'].toString(),
       fromLat: (d['fromLat'] as num?)?.toDouble(),
       fromLng: (d['fromLng'] as num?)?.toDouble(),
       fromCity: (d['fromCity'] ?? '').toString(),
       toCity: (d['toCity'] ?? '').toString(),
-      pickupDate: (d['pickupDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      pickupDate: d['pickupDate'] != null ? DateTime.parse(d['pickupDate'].toString()) : DateTime.now(),
       weightKg: (d['weightKg'] as num?)?.toInt() ?? 0,
       priceType: (d['priceType'] ?? 'offer').toString(),
-      fixedPrice: d['fixedPrice'] == null ? null : (d['fixedPrice'] as int),
+      fixedPrice: d['fixedPrice'] == null ? null : (d['fixedPrice'] as num).toInt(),
       status: (d['status'] ?? 'open').toString(),
       shipperId: d['shipperId']?.toString(),
       shipperName: d['shipperName']?.toString(),
@@ -56,14 +54,14 @@ class Load {
     );
   }
 
-  // ✅ Load -> Firestore
+  // ✅ Load -> Map
   Map<String, dynamic> toMap() {
     return {
       'fromLat': fromLat,
       'fromLng': fromLng,
       'fromCity': fromCity,
       'toCity': toCity,
-      'pickupDate': Timestamp.fromDate(pickupDate),
+      'pickupDate': pickupDate.toUtc().toIso8601String(),
       'weightKg': weightKg,
       'priceType': priceType,
       'fixedPrice': fixedPrice,
@@ -72,7 +70,6 @@ class Load {
       'shipperName': shipperName,
       'acceptedOfferId': acceptedOfferId,
       'acceptedDriverId': acceptedDriverId,
-      'createdAt': FieldValue.serverTimestamp(),
     };
   }
 

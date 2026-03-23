@@ -1,0 +1,20 @@
+﻿Analyzing nakliyeuygulamas-...                                  
+
+  error - Undefined name 'FirebaseAuth' - lib\screens\profile_screen.dart:57:18 - undefined_identifier
+  error - Undefined name 'EmailAuthProvider' - lib\screens\profile_screen.dart:99:20 - undefined_identifier
+  error - The method 'collection' isn't defined for the type 'SupabaseClient' - lib\screens\profile_screen.dart:112:27 - undefined_method
+  error - Undefined name 'FieldValue' - lib\screens\profile_screen.dart:149:22 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\profile_screen.dart:223:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\profile_screen.dart:265:50 - use_build_context_synchronously
+  error - Undefined name 'FirebaseAuth' - lib\screens\profile_screen.dart:268:13 - undefined_identifier
+warning - The value of the local variable 'isDriver' isn't used - lib\screens\profile_screen.dart:283:11 - unused_local_variable
+warning - The value of the local variable 'cs' isn't used - lib\screens\profile_screen.dart:284:11 - unused_local_variable
+  error - The name 'DocumentSnapshot' isn't a type, so it can't be used as a type argument - lib\screens\profile_screen.dart:348:37 - non_type_as_type_argument
+  error - Undefined name 'FirebaseFirestore' - lib\screens\profile_screen.dart:349:33 - undefined_identifier
+  error - The getter 'uid' isn't defined for the type 'User' - lib\screens\profile_screen.dart:351:61 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:370:36 - deprecated_member_use
+  error - The name 'QuerySnapshot' isn't a type, so it can't be used as a type argument - lib\screens\profile_screen.dart:500:29 - non_type_as_type_argument
+  error - Undefined name 'FirebaseFirestore' - lib\screens\profile_screen.dart:501:25 - undefined_identifier
+  error - The getter 'uid' isn't defined for the type 'User' - lib\screens\profile_screen.dart:507:63 - undefined_getter
+  error - The method 'fromDoc' isn't defined for the type 'Load' - lib\screens\profile_screen.dart:516:55 - undefined_method
+

@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../app_state.dart';
 
@@ -8,19 +8,19 @@ class UserManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEn = appState.language == "en";
-    final db = FirebaseFirestore.instance;
+    final db = Supabase.instance.client;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(isEn ? "User Management" : "Kullanıcı Yönetimi"),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: db.collection("users").orderBy("createdAt", descending: true).snapshots(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: db.from("users").stream(primaryKey: ['id']).order("createdAt", ascending: false),
         builder: (context, snap) {
           if (snap.hasError) return Center(child: Text("Hata: ${snap.error}"));
           if (!snap.hasData) return const Center(child: CircularProgressIndicator());
 
-          final docs = snap.data!.docs;
+          final docs = snap.data!;
 
           if (docs.isEmpty) {
             return Center(child: Text(isEn ? "No users found." : "Kullanıcı bulunamadı."));
@@ -30,8 +30,8 @@ class UserManagementScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
-              final uid = docs[index].id;
+              final data = docs[index];
+              final uid = data['id'].toString();
               final name = data["name"] ?? "İsimsiz";
               final role = data["role"] ?? "user";
               final isVerified = data["isVerified"] ?? false;
@@ -41,13 +41,13 @@ class UserManagementScreen extends StatelessWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
                 ),
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
-                    backgroundColor: role == "driver" ? Colors.blue.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    backgroundColor: role == "driver" ? Colors.blue.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                     child: Icon(
                       role == "driver" ? Icons.local_shipping : Icons.person,
                       color: role == "driver" ? Colors.blue : Colors.orange,
@@ -88,18 +88,20 @@ class UserManagementScreen extends StatelessWidget {
 
   Future<void> _verifyUser(BuildContext context, String uid, String name) async {
     try {
-      await FirebaseFirestore.instance.collection("users").doc(uid).update({
+      await Supabase.instance.client.from("users").update({
         "isVerified": true,
-        "verifiedAt": FieldValue.serverTimestamp(),
-      });
+        "verifiedAt": DateTime.now().toUtc().toIso8601String(),
+      }).eq("id", uid);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("$name onaylandı ✅")),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Hata: $e")),
         );
       }

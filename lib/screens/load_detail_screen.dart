@@ -54,7 +54,8 @@ class _LoadDetailScreenState extends State<LoadDetailScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
+              // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("V1: Teklif kaydı (Firebase sonraki adım)")),
               );
             },

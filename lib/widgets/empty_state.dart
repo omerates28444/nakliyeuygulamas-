@@ -24,7 +24,7 @@ class EmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: cs.outlineVariant),
-        color: cs.surfaceContainerHighest.withOpacity(0.35),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

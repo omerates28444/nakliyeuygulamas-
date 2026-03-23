@@ -33,7 +33,7 @@ class ActiveJobsBottomBar extends StatelessWidget {
             blurRadius: 18,
             spreadRadius: 2,
             offset: const Offset(0, -6),
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
           ),
         ],
         border: Border(
@@ -66,7 +66,7 @@ class _EmptyBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withOpacity(0.35),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: cs.outlineVariant),
       ),
@@ -159,7 +159,7 @@ class _JobBarCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: chipColor()),
-                  color: chipColor().withOpacity(0.12),
+                  color: chipColor().withValues(alpha: 0.12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -228,12 +228,14 @@ class _JobBarCard extends StatelessWidget {
                     try {
                       await onMarkDelivered(loadId: job.id);
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Teslim bildirimi gönderildi ✅")),
                       );
                     } catch (e) {
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Hata: $e")),
                       );
                     }
@@ -268,12 +270,14 @@ class _JobBarCard extends StatelessWidget {
                     try {
                       await onCancelJob(loadId: job.id);
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("İş iptal edildi ✅")),
                       );
                     } catch (e) {
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("İptal hatası: $e")),
                       );
                     }
@@ -305,7 +309,8 @@ class _JobBarCard extends StatelessWidget {
     final lng = j.fromLng;
 
     if (lat == null || lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Bu işin konumu yok (fromLat/fromLng boş).")),
       );
       return;
@@ -317,7 +322,8 @@ class _JobBarCard extends StatelessWidget {
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Google Maps açılamadı.")),
       );
     }

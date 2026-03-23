@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,27 +13,28 @@ class ActiveJobsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = AuthService().currentUser?.uid;
+    final uid = AuthService().currentUser?.id;
 
     if (uid == null) {
       return const Center(child: Text("Oturum yok. Tekrar giriş yap."));
     }
 
-    final q = FirebaseFirestore.instance
-        .collection("loads")
-        .where("acceptedDriverId", isEqualTo: uid)
-        .where("status", whereIn: ["matched", "delivered_pending"]).orderBy(
-            "createdAt",
-            descending: true);
+    final stream = Supabase.instance.client
+        .from("loads")
+        .stream(primaryKey: ['id'])
+        .eq("acceptedDriverId", uid)
+        .order("createdAt", ascending: false);
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: q.snapshots(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: stream,
       builder: (context, snap) {
         if (snap.hasError) return Center(child: Text("Hata: ${snap.error}"));
-        if (!snap.hasData)
+        if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
 
-        final jobs = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+        final allJobs = snap.data!.map((d) => Load.fromMap(d)).toList();
+        final jobs = allJobs.where((j) => j.status == 'matched' || j.status == 'delivered_pending').toList();
 
         if (jobs.isEmpty) {
           return const Center(child: Text("Henüz kabul edilen işin yok."));
@@ -57,7 +57,7 @@ class ActiveJobsScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(color: color),
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -169,7 +169,8 @@ class ActiveJobsScreen extends StatelessWidget {
                                         try {
                                           await _markDelivered(loadId: j.id);
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context)
+                                          // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             const SnackBar(
                                                 content: Text(
@@ -177,7 +178,8 @@ class ActiveJobsScreen extends StatelessWidget {
                                           );
                                         } catch (e) {
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context)
+                                          // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(content: Text("Hata: $e")),
                                           );
@@ -217,13 +219,15 @@ class ActiveJobsScreen extends StatelessWidget {
                                   try {
                                     await _cancelJob(loadId: j.id);
                                     if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content: Text("İş iptal edildi ✅")),
                                     );
                                   } catch (e) {
                                     if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                           content: Text("İptal hatası: $e")),
                                     );
@@ -251,7 +255,8 @@ class ActiveJobsScreen extends StatelessWidget {
     final lng = j.fromLng;
 
     if (lat == null || lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text("Bu işin konumu yok (fromLat/fromLng boş).")),
       );
@@ -264,7 +269,8 @@ class ActiveJobsScreen extends StatelessWidget {
 
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Google Maps açılamadı.")),
       );
     }
@@ -272,14 +278,11 @@ class ActiveJobsScreen extends StatelessWidget {
 
   // ✅ Şoför teslim etti bildirimi (iş: onay bekliyor)
   Future<void> _markDelivered({required String loadId}) async {
-    final db = FirebaseFirestore.instance;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final db = Supabase.instance.client;
+    final uid = db.auth.currentUser?.id;
     if (uid == null) throw Exception("Oturum yok");
 
-    final ref = db.collection("loads").doc(loadId);
-
-    final snap = await ref.get();
-    final data = snap.data();
+    final data = await db.from("loads").select().eq("id", loadId).maybeSingle();
     if (data == null) throw Exception("İlan bulunamadı");
 
     if ((data["acceptedDriverId"] ?? "") != uid) {
@@ -289,22 +292,19 @@ class ActiveJobsScreen extends StatelessWidget {
     final status = (data["status"] ?? "").toString();
     if (status == "done") return;
 
-    await ref.update({
+    await db.from("loads").update({
       "status": "delivered_pending",
-      "deliveredAt": FieldValue.serverTimestamp(),
+      "deliveredAt": DateTime.now().toUtc().toIso8601String(),
       "deliveredByDriverId": uid,
-    });
+    }).eq("id", loadId);
   }
 
   Future<void> _cancelJob({required String loadId}) async {
-    final db = FirebaseFirestore.instance;
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final db = Supabase.instance.client;
+    final uid = db.auth.currentUser?.id;
     if (uid == null) throw Exception("Oturum yok");
 
-    final ref = db.collection("loads").doc(loadId);
-
-    final snap = await ref.get();
-    final data = snap.data();
+    final data = await db.from("loads").select().eq("id", loadId).maybeSingle();
     if (data == null) throw Exception("İlan bulunamadı");
 
     if ((data["acceptedDriverId"] ?? "") != uid) {
@@ -312,19 +312,13 @@ class ActiveJobsScreen extends StatelessWidget {
     }
 
     // ✅ 1) İşi tekrar open yap
-    await ref.update({
+    await db.from("loads").update({
       "status": "open",
-      "acceptedOfferId": FieldValue.delete(),
-      "acceptedDriverId": FieldValue.delete(),
-    });
+      "acceptedOfferId": null,
+      "acceptedDriverId": null,
+    }).eq("id", loadId);
 
     // ✅ 2) O işe ait tüm teklifleri SİL (sıfırdan teklif verilebilsin)
-    final offers =
-        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-    final batch = db.batch();
-    for (final d in offers.docs) {
-      batch.delete(d.reference);
-    }
-    await batch.commit();
+    await db.from("offers").delete().eq("loadId", loadId);
   }
 }

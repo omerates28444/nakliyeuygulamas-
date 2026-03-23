@@ -1,0 +1,519 @@
+﻿Analyzing nakliyeuygulamas-...                                  
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:36:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:69:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_panel.dart:162:38 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\active_jobs_screen.dart:33:11 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\active_jobs_screen.dart:59:34 - deprecated_member_use
+warning - The value of the local variable 'cs' isn't used - lib\screens\admin_dashboard_screen.dart:12:11 - unused_local_variable
+  error - The named parameter 'builder' is required, but there's no corresponding argument - lib\screens\admin_dashboard_screen.dart:46:11 - missing_required_argument
+  error - The argument type 'SupabaseQueryBuilder' can't be assigned to the parameter type 'Stream<List<Map<String, dynamic>>>?'.  - lib\screens\admin_dashboard_screen.dart:47:21 - argument_type_not_assignable
+  error - Expected an identifier - lib\screens\admin_dashboard_screen.dart:47:29 - missing_identifier
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:47:30 - expected_token
+  error - Unterminated string literal - lib\screens\admin_dashboard_screen.dart:47:66 - unterminated_string_literal
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:48:13 - expected_token
+  error - The named parameter 'builder' isn't defined - lib\screens\admin_dashboard_screen.dart:48:13 - undefined_named_parameter
+  error - The named parameter 'builder' is required, but there's no corresponding argument - lib\screens\admin_dashboard_screen.dart:49:22 - missing_required_argument
+  error - The argument type 'SupabaseQueryBuilder' can't be assigned to the parameter type 'Stream<List<Map<String, dynamic>>>?'.  - lib\screens\admin_dashboard_screen.dart:50:25 - argument_type_not_assignable
+  error - Expected an identifier - lib\screens\admin_dashboard_screen.dart:50:33 - missing_identifier
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:50:34 - expected_token
+  error - Unterminated string literal - lib\screens\admin_dashboard_screen.dart:50:70 - unterminated_string_literal
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:51:17 - expected_token
+  error - The named parameter 'builder' isn't defined - lib\screens\admin_dashboard_screen.dart:51:17 - undefined_named_parameter
+  error - Expected to find ')' - lib\screens\admin_dashboard_screen.dart:82:16 - expected_token
+  error - Too many positional arguments: 0 expected, but 8 found - lib\screens\admin_dashboard_screen.dart:86:11 - extra_positional_arguments_could_be_named
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:91:139 - deprecated_member_use
+  error - The returned type 'OsmMapHomeScreen' isn't returnable from a 'Widget' function, as required by the closure's context - lib\screens\admin_dashboard_screen.dart:94:263 - return_of_invalid_type_from_closure
+  error - The returned type 'OsmMapHomeScreen' isn't returnable from a 'Widget' function, as required by the closure's context - lib\screens\admin_dashboard_screen.dart:95:267 - return_of_invalid_type_from_closure
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:104:139 - deprecated_member_use
+  error - The named parameter 'builder' is required, but there's no corresponding argument - lib\screens\admin_dashboard_screen.dart:105:20 - missing_required_argument
+  error - The argument type 'SupabaseQueryBuilder' can't be assigned to the parameter type 'Stream<List<Map<String, dynamic>>>?'.  - lib\screens\admin_dashboard_screen.dart:107:23 - argument_type_not_assignable
+  error - Expected an identifier - lib\screens\admin_dashboard_screen.dart:107:31 - missing_identifier
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:107:32 - expected_token
+  error - Unterminated string literal - lib\screens\admin_dashboard_screen.dart:107:116 - unterminated_string_literal
+  error - Expected to find ',' - lib\screens\admin_dashboard_screen.dart:108:15 - expected_token
+  error - The named parameter 'builder' isn't defined - lib\screens\admin_dashboard_screen.dart:108:15 - undefined_named_parameter
+  error - Too many positional arguments: 0 expected, but 2 found - lib\screens\admin_dashboard_screen.dart:129:11 - extra_positional_arguments_could_be_named
+  error - Expected to find ')' - lib\screens\admin_dashboard_screen.dart:136:9 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:151:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:152:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\admin_dashboard_screen.dart:176:61 - deprecated_member_use
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\screens\app_shell.dart:13:7 - deprecated_member_use
+  error - The returned type 'OsmMapHomeScreen' isn't returnable from a 'Widget' function, as required by the closure's context - lib\screens\app_shell.dart:46:18 - return_of_invalid_type_from_closure
+warning - Unused import: '../models/load.dart' - lib\screens\load_create_screen.dart:5:8 - unused_import
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\screens\login_screen.dart:210:7 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:49:11 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps - lib\screens\offers_inbox_screen.dart:260:29 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\offers_inbox_screen.dart:418:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\offers_inbox_screen.dart:512:58 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:650:55 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\offers_inbox_screen.dart:679:55 - curly_braces_in_flow_control_structures
+  error - Classes can only extend other classes - lib\screens\osm_map_home_screen.dart:13:32 - extends_non_class
+  error - No associated named super constructor parameter - lib\screens\osm_map_home_screen.dart:14:33 - super_formal_parameter_without_associated_named
+  error - Undefined class 'State' - lib\screens\osm_map_home_screen.dart:17:3 - undefined_class
+warning - The method doesn't override an inherited method - lib\screens\osm_map_home_screen.dart:17:27 - override_on_non_overriding_member
+  error - Classes can only extend other classes - lib\screens\osm_map_home_screen.dart:20:37 - extends_non_class
+  error - Undefined class 'MapController' - lib\screens\osm_map_home_screen.dart:21:9 - undefined_class
+  error - The method 'MapController' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:21:40 - undefined_method
+  error - Undefined class 'Position' - lib\screens\osm_map_home_screen.dart:23:3 - undefined_class
+warning - The method doesn't override an inherited method - lib\screens\osm_map_home_screen.dart:28:8 - override_on_non_overriding_member
+  error - The method 'initState' isn't defined in a superclass of 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:29:11 - undefined_super_member
+  error - The method 'LatLng' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:40:27 - undefined_method
+  error - The method 'setState' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:46:5 - undefined_method
+  error - Undefined name 'Geolocator' - lib\screens\osm_map_home_screen.dart:49:29 - undefined_identifier
+  error - Undefined class 'LocationPermission' - lib\screens\osm_map_home_screen.dart:55:7 - undefined_class
+  error - Undefined name 'Geolocator' - lib\screens\osm_map_home_screen.dart:55:39 - undefined_identifier
+  error - Undefined name 'LocationPermission' - lib\screens\osm_map_home_screen.dart:56:19 - undefined_identifier
+  error - Undefined name 'Geolocator' - lib\screens\osm_map_home_screen.dart:57:22 - undefined_identifier
+  error - Undefined name 'LocationPermission' - lib\screens\osm_map_home_screen.dart:59:19 - undefined_identifier
+  error - Undefined name 'LocationPermission' - lib\screens\osm_map_home_screen.dart:60:19 - undefined_identifier
+  error - Undefined name 'Geolocator' - lib\screens\osm_map_home_screen.dart:65:26 - undefined_identifier
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:66:27 - undefined_identifier
+  error - The method 'setState' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:66:36 - undefined_method
+  error - Undefined name 'Geolocator' - lib\screens\osm_map_home_screen.dart:68:25 - undefined_identifier
+  error - Undefined name 'LocationAccuracy' - lib\screens\osm_map_home_screen.dart:69:28 - undefined_identifier
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:70:11 - undefined_identifier
+  error - The method 'setState' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:70:20 - undefined_method
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:72:11 - undefined_identifier
+  error - The method 'setState' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:72:20 - undefined_method
+  error - The method 'LatLng' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:81:25 - undefined_method
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:85:10 - undefined_identifier
+  error - Undefined name 'ScaffoldMessenger' - lib\screens\osm_map_home_screen.dart:86:5 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:86:26 - undefined_identifier
+  error - The method 'SnackBar' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:86:48 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:86:66 - undefined_method
+  error - The name 'Marker' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:89:8 - non_type_as_type_argument
+  error - The name 'Marker' isn't a type, so it can't be used as a type argument - lib\screens\osm_map_home_screen.dart:90:22 - non_type_as_type_argument
+  error - The method 'Marker' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:95:9 - undefined_method
+  error - The method 'LatLng' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:96:18 - undefined_method
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:99:18 - undefined_method
+  error - The method 'BoxDecoration' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:100:25 - undefined_method
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:101:22 - undefined_identifier
+  error - Undefined name 'BoxShape' - lib\screens\osm_map_home_screen.dart:102:22 - undefined_identifier
+  error - The method 'Center' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:104:20 - undefined_method
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:105:22 - undefined_method
+  error - The name 'BoxDecoration' isn't a class - lib\screens\osm_map_home_screen.dart:108:35 - creation_with_non_type
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:109:28 - undefined_identifier
+  error - Undefined name 'BoxShape' - lib\screens\osm_map_home_screen.dart:109:48 - undefined_identifier
+  error - The method 'LatLng' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:122:17 - undefined_method
+  error - The method 'Marker' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:124:9 - undefined_method
+  error - The method 'GestureDetector' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:128:18 - undefined_method
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:130:26 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:130:31 - undefined_identifier
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:130:67 - undefined_identifier
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:210:3 - undefined_class
+  error - Undefined class 'IconData' - lib\screens\osm_map_home_screen.dart:210:26 - undefined_class
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:211:16 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:211:25 - undefined_identifier
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:212:12 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:213:22 - undefined_identifier
+  error - The method 'BoxDecoration' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:214:19 - undefined_method
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:215:16 - undefined_identifier
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:216:23 - undefined_identifier
+  error - Undefined name 'Border' - lib\screens\osm_map_home_screen.dart:217:17 - undefined_identifier
+  error - The method 'BoxShadow' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:219:11 - undefined_method
+  error - The name 'Offset' isn't a class - lib\screens\osm_map_home_screen.dart:221:27 - creation_with_non_type
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:222:20 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:226:14 - undefined_method
+  error - Undefined name 'MainAxisSize' - lib\screens\osm_map_home_screen.dart:227:23 - undefined_identifier
+  error - The method 'Icon' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:229:11 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:230:17 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:231:11 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:231:35 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:231:57 - undefined_identifier
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:237:3 - undefined_class
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:238:12 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:239:22 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:240:14 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:242:11 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:243:20 - undefined_method
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:245:22 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:246:26 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:246:35 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:249:17 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:250:11 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:250:36 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:250:58 - undefined_identifier
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:256:3 - undefined_class
+  error - Undefined class 'IconData' - lib\screens\osm_map_home_screen.dart:256:36 - undefined_class
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:257:16 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:257:25 - undefined_identifier
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:258:12 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:259:22 - undefined_identifier
+  error - The method 'BoxDecoration' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:260:19 - undefined_method
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:262:15 - undefined_identifier
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:264:23 - undefined_identifier
+  error - Undefined name 'Border' - lib\screens\osm_map_home_screen.dart:265:17 - undefined_identifier
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:265:44 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:267:14 - undefined_method
+  error - Undefined name 'MainAxisSize' - lib\screens\osm_map_home_screen.dart:268:23 - undefined_identifier
+  error - The method 'Icon' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:271:13 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:272:19 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:274:11 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:274:35 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:274:57 - undefined_identifier
+  error - Undefined class 'LatLng' - lib\screens\osm_map_home_screen.dart:280:30 - undefined_class
+  error - The method 'TextEditingController' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:282:23 - undefined_method
+  error - The method 'TextEditingController' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:283:22 - undefined_method
+  error - The method 'showModalBottomSheet' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:285:5 - undefined_method
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:286:16 - undefined_identifier
+  error - The method 'SafeArea' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:294:16 - undefined_method
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:295:18 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:296:22 - undefined_identifier
+  error - Undefined name 'MediaQuery' - lib\screens\osm_map_home_screen.dart:300:28 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:300:42 - undefined_identifier
+  error - The method 'SingleChildScrollView' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:302:20 - undefined_method
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:303:22 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:304:37 - undefined_identifier
+  error - Undefined name 'MainAxisSize' - lib\screens\osm_map_home_screen.dart:305:31 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:307:19 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:308:41 - undefined_identifier
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:310:23 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:311:32 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:313:40 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:314:57 - undefined_identifier
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:319:31 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:324:25 - creation_with_non_type
+  error - The method 'Card' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:325:19 - undefined_method
+  error - The method 'RoundedRectangleBorder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:327:28 - undefined_method
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:328:37 - undefined_identifier
+  error - The method 'BorderSide' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:329:29 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:330:34 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:330:43 - undefined_identifier
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:332:28 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:333:38 - undefined_identifier
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:334:30 - undefined_method
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:341:29 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:342:46 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:343:38 - undefined_method
+  error - The method 'Icon' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:345:35 - undefined_method
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:345:40 - undefined_identifier
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:347:46 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:347:55 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:350:41 - creation_with_non_type
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:351:35 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:352:44 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:355:43 - undefined_identifier
+  error - Undefined name 'context' - lib\screens\osm_map_home_screen.dart:355:52 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:365:25 - creation_with_non_type
+  error - The method 'Builder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:367:21 - undefined_method
+  error - The method 'StreamBuilder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:379:32 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:383:38 - undefined_method
+  error - The name 'Padding' isn't a class - lib\screens\osm_map_home_screen.dart:386:44 - creation_with_non_type
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:387:42 - undefined_identifier
+  error - The method 'Center' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:389:37 - undefined_method
+  error - The method 'CircularProgressIndicator' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:389:51 - undefined_method
+  error - The method 'Card' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:415:38 - undefined_method
+  error - The method 'RoundedRectangleBorder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:417:40 - undefined_method
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:418:49 - undefined_identifier
+  error - The method 'BorderSide' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:419:41 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:420:46 - undefined_identifier
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:424:40 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:425:50 - undefined_identifier
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:426:42 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:428:41 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:430:45 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:431:50 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:432:59 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:433:45 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:435:49 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:438:47 - creation_with_non_type
+  error - The name 'Divider' isn't a class - lib\screens\osm_map_home_screen.dart:439:47 - creation_with_non_type
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:440:47 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:441:52 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:442:61 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:443:47 - creation_with_non_type
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:453:50 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:454:60 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:456:52 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:458:49 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:459:58 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:461:66 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:463:61 - undefined_identifier
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:469:51 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:470:68 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:476:47 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:478:45 - creation_with_non_type
+  error - The method 'SizedBox' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:479:39 - undefined_method
+  error - Undefined name 'FilledButton' - lib\screens\osm_map_home_screen.dart:482:48 - undefined_identifier
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:483:55 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:484:47 - undefined_identifier
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:485:50 - undefined_method
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:534:58 - undefined_identifier
+  error - Undefined name 'Navigator' - lib\screens\osm_map_home_screen.dart:535:53 - undefined_identifier
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:560:38 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:561:53 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:564:43 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:565:48 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:566:57 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:567:43 - creation_with_non_type
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:577:46 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:579:51 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:580:48 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:582:45 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:583:54 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:585:62 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:587:57 - undefined_identifier
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:593:47 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:594:64 - creation_with_non_type
+  error - The name 'Divider' isn't a class - lib\screens\osm_map_home_screen.dart:600:43 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:601:43 - creation_with_non_type
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:603:41 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:604:46 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:605:55 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:606:41 - creation_with_non_type
+  error - The method 'TextField' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:607:35 - undefined_method
+  error - Undefined name 'TextInputType' - lib\screens\osm_map_home_screen.dart:609:51 - undefined_identifier
+  error - The name 'InputDecoration' isn't a class - lib\screens\osm_map_home_screen.dart:610:55 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:613:41 - creation_with_non_type
+  error - The method 'TextField' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:614:35 - undefined_method
+  error - The name 'InputDecoration' isn't a class - lib\screens\osm_map_home_screen.dart:616:55 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:619:41 - creation_with_non_type
+  error - Undefined name 'FilledButton' - lib\screens\osm_map_home_screen.dart:620:35 - undefined_identifier
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:621:49 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:621:54 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:622:50 - creation_with_non_type
+  error - Undefined name 'FirebaseAuth' - lib\screens\osm_map_home_screen.dart:625:54 - undefined_identifier
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:653:46 - undefined_identifier
+  error - Undefined name 'Navigator' - lib\screens\osm_map_home_screen.dart:654:41 - undefined_identifier
+  error - Undefined class 'IconData' - lib\screens\osm_map_home_screen.dart:672:29 - undefined_class
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:676:46 - undefined_identifier
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:680:46 - undefined_identifier
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:684:46 - undefined_identifier
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:688:46 - undefined_identifier
+  error - The method 'Card' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:692:36 - undefined_method
+  error - The method 'RoundedRectangleBorder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:694:38 - undefined_method
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:695:47 - undefined_identifier
+  error - The method 'BorderSide' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:696:39 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:697:44 - undefined_identifier
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:701:38 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:702:48 - undefined_identifier
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:703:40 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:704:55 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:707:45 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:708:50 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:709:59 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:710:45 - creation_with_non_type
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:720:48 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:722:53 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:723:50 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:725:47 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:726:56 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:728:64 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:730:59 - undefined_identifier
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:736:49 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:737:66 - creation_with_non_type
+  error - The name 'Divider' isn't a class - lib\screens\osm_map_home_screen.dart:743:45 - creation_with_non_type
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:745:37 - undefined_method
+  error - The method 'Icon' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:747:41 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:748:47 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:749:41 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:751:56 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:752:59 - undefined_identifier
+  error - The name 'Spacer' isn't a class - lib\screens\osm_map_home_screen.dart:755:47 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:760:45 - creation_with_non_type
+  error - The name 'Divider' isn't a class - lib\screens\osm_map_home_screen.dart:761:45 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:762:39 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:764:48 - undefined_identifier
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:768:61 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:770:45 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:772:49 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:774:47 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:775:41 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:776:52 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:780:45 - creation_with_non_type
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:781:39 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:783:43 - undefined_method
+  error - The method 'FilledButton' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:784:52 - undefined_method
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:791:62 - undefined_identifier
+  error - Undefined name 'Navigator' - lib\screens\osm_map_home_screen.dart:792:57 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:801:60 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:804:49 - creation_with_non_type
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:805:43 - undefined_method
+  error - The method 'OutlinedButton' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:806:52 - undefined_method
+  error - Undefined name 'mounted' - lib\screens\osm_map_home_screen.dart:812:62 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:820:60 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:834:27 - creation_with_non_type
+  error - The method 'SizedBox' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:836:19 - undefined_method
+  error - Undefined name 'FilledButton' - lib\screens\osm_map_home_screen.dart:839:28 - undefined_identifier
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:841:35 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:841:40 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:842:36 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:845:25 - creation_with_non_type
+  error - Undefined class 'LatLng' - lib\screens\osm_map_home_screen.dart:855:32 - undefined_class
+  error - The method 'launchUrl' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:864:16 - undefined_method
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:870:3 - undefined_class
+  error - The method 'DraggableScrollableSheet' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:873:12 - undefined_method
+  error - The method 'Material' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:880:16 - undefined_method
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:882:31 - undefined_identifier
+  error - Undefined name 'Radius' - lib\screens\osm_map_home_screen.dart:883:22 - undefined_identifier
+  error - Undefined name 'Radius' - lib\screens\osm_map_home_screen.dart:884:23 - undefined_identifier
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:886:18 - undefined_method
+  error - The method 'BoxDecoration' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:887:25 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:888:22 - undefined_identifier
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:889:35 - undefined_identifier
+  error - Undefined name 'Radius' - lib\screens\osm_map_home_screen.dart:890:26 - undefined_identifier
+  error - Undefined name 'Radius' - lib\screens\osm_map_home_screen.dart:891:27 - undefined_identifier
+  error - The method 'Border' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:893:23 - undefined_method
+  error - The method 'BorderSide' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:894:22 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:895:28 - undefined_identifier
+  error - The method 'Column' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:898:20 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:900:23 - creation_with_non_type
+  error - The method 'Container' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:901:17 - undefined_method
+  error - The method 'BoxDecoration' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:904:31 - undefined_method
+  error - Undefined name 'Colors' - lib\screens\osm_map_home_screen.dart:905:28 - undefined_identifier
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:906:35 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:909:23 - creation_with_non_type
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:910:17 - undefined_method
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:929:3 - undefined_class
+warning - The method doesn't override an inherited method - lib\screens\osm_map_home_screen.dart:929:10 - override_on_non_overriding_member
+  error - Undefined class 'BuildContext' - lib\screens\osm_map_home_screen.dart:929:16 - undefined_class
+  error - Const variables must be initialized with a constant value - lib\screens\osm_map_home_screen.dart:930:22 - const_initialized_with_non_constant_value
+  error - The method 'LatLng' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:930:22 - undefined_method
+  error - The method 'Scaffold' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:932:12 - undefined_method
+  error - The method 'StreamBuilder' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:933:13 - undefined_method
+  error - The method 'Center' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:937:20 - undefined_method
+  error - The method 'Text' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:937:34 - undefined_method
+  error - The name 'Center' isn't a class - lib\screens\osm_map_home_screen.dart:940:26 - creation_with_non_type
+  error - The method 'CircularProgressIndicator' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:940:40 - undefined_method
+  error - Undefined name 'WidgetsBinding' - lib\screens\osm_map_home_screen.dart:951:13 - undefined_identifier
+  error - The method 'Stack' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:956:18 - undefined_method
+  error - The method 'FlutterMap' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:958:15 - undefined_method
+  error - The method 'MapOptions' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:960:26 - undefined_method
+  error - The name 'InteractionOptions' isn't a class - lib\screens\osm_map_home_screen.dart:966:29 - creation_with_non_type
+  error - Undefined name 'InteractiveFlag' - lib\screens\osm_map_home_screen.dart:966:55 - undefined_identifier
+  error - The method 'TileLayer' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:969:19 - undefined_method
+  error - The method 'MarkerLayer' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:974:19 - undefined_method
+  error - The method 'SafeArea' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:978:15 - undefined_method
+  error - The method 'Padding' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:979:24 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:980:34 - undefined_identifier
+  error - The method 'Row' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:981:26 - undefined_method
+  error - The method 'Expanded' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:983:23 - undefined_method
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:985:33 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:989:29 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:991:37 - undefined_identifier
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:993:37 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:994:29 - creation_with_non_type
+  error - Undefined name 'IconButton' - lib\screens\osm_map_home_screen.dart:995:23 - undefined_identifier
+  error - Undefined name 'Navigator' - lib\screens\osm_map_home_screen.dart:998:27 - undefined_identifier
+  error - The method 'MaterialPageRoute' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:1000:29 - undefined_method
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:1004:37 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:1004:42 - undefined_identifier
+  error - The method 'Positioned' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:1011:15 - undefined_method
+  error - The method 'FloatingActionButton' isn't defined for the type 'OsmMapHomeScreenState' - lib\screens\osm_map_home_screen.dart:1014:24 - undefined_method
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:1022:32 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:1022:37 - undefined_identifier
+  error - Classes can only extend other classes - lib\screens\osm_map_home_screen.dart:1038:38 - extends_non_class
+  error - Undefined class 'ScrollController' - lib\screens\osm_map_home_screen.dart:1039:9 - undefined_class
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:1048:3 - undefined_class
+warning - The method doesn't override an inherited method - lib\screens\osm_map_home_screen.dart:1048:10 - override_on_non_overriding_member
+  error - Undefined class 'BuildContext' - lib\screens\osm_map_home_screen.dart:1048:16 - undefined_class
+  error - The method 'ListView' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1051:14 - undefined_method
+  error - The method 'Padding' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1054:11 - undefined_method
+  error - The values in a const list literal must be constants - lib\screens\osm_map_home_screen.dart:1054:11 - non_constant_list_element
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1055:22 - undefined_identifier
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1056:20 - undefined_method
+  error - Undefined name 'FirebaseFirestore' - lib\screens\osm_map_home_screen.dart:1062:15 - undefined_identifier
+  error - The method 'StreamBuilder' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1069:12 - undefined_method
+  error - The method 'ListView' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1073:18 - undefined_method
+  error - The method 'Padding' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1076:15 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1077:32 - undefined_identifier
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1078:24 - undefined_method
+  error - The method 'ListView' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1084:18 - undefined_method
+  error - The method 'Padding' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1087:15 - undefined_method
+  error - The values in a const list literal must be constants - lib\screens\osm_map_home_screen.dart:1087:15 - non_constant_list_element
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1088:26 - undefined_identifier
+  error - The method 'Center' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1089:24 - undefined_method
+  error - The method 'CircularProgressIndicator' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1089:38 - undefined_method
+  error - The method 'ListView' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1098:16 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1100:26 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:1102:19 - creation_with_non_type
+  error - The method 'TextStyle' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1103:24 - undefined_method
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:1103:46 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1104:19 - creation_with_non_type
+  error - The name 'Padding' isn't a class - lib\screens\osm_map_home_screen.dart:1106:21 - creation_with_non_type
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1107:26 - undefined_identifier
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1108:24 - undefined_method
+  error - Undefined name 'Theme' - lib\screens\osm_map_home_screen.dart:1111:26 - undefined_identifier
+  error - The method 'Card' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1114:22 - undefined_method
+  error - The method 'RoundedRectangleBorder' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1116:24 - undefined_method
+  error - Undefined name 'BorderRadius' - lib\screens\osm_map_home_screen.dart:1117:33 - undefined_identifier
+  error - The method 'BorderSide' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1118:25 - undefined_method
+  error - The method 'Padding' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1120:24 - undefined_method
+  error - Undefined name 'EdgeInsets' - lib\screens\osm_map_home_screen.dart:1121:34 - undefined_identifier
+  error - The method 'Column' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1122:26 - undefined_method
+  error - Undefined name 'CrossAxisAlignment' - lib\screens\osm_map_home_screen.dart:1123:41 - undefined_identifier
+  error - The method 'Row' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1125:23 - undefined_method
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:1127:33 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:1127:38 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1128:33 - creation_with_non_type
+  error - The method 'Expanded' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1129:27 - undefined_method
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1130:36 - undefined_method
+  error - The name 'TextStyle' isn't a class - lib\screens\osm_map_home_screen.dart:1133:41 - creation_with_non_type
+  error - Undefined name 'FontWeight' - lib\screens\osm_map_home_screen.dart:1133:63 - undefined_identifier
+  error - Undefined name 'TextOverflow' - lib\screens\osm_map_home_screen.dart:1135:41 - undefined_identifier
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1140:29 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1141:23 - undefined_method
+  error - The method 'TextStyle' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1143:32 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1145:29 - creation_with_non_type
+  error - The method 'Row' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1146:23 - undefined_method
+  error - The method 'Expanded' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1148:27 - undefined_method
+  error - Undefined name 'OutlinedButton' - lib\screens\osm_map_home_screen.dart:1149:36 - undefined_identifier
+  error - Undefined name 'ScaffoldMessenger' - lib\screens\osm_map_home_screen.dart:1155:35 - undefined_identifier
+  error - The name 'SnackBar' isn't a class - lib\screens\osm_map_home_screen.dart:1156:43 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1157:50 - undefined_method
+  error - The method 'launchUrl' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1166:50 - undefined_method
+  error - Undefined name 'ScaffoldMessenger' - lib\screens\osm_map_home_screen.dart:1169:35 - undefined_identifier
+  error - The name 'SnackBar' isn't a class - lib\screens\osm_map_home_screen.dart:1170:43 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1172:45 - undefined_method
+  error - The name 'Icon' isn't a class - lib\screens\osm_map_home_screen.dart:1176:43 - creation_with_non_type
+  error - Undefined name 'Icons' - lib\screens\osm_map_home_screen.dart:1176:48 - undefined_identifier
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:1177:44 - creation_with_non_type
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1180:33 - creation_with_non_type
+  error - The method 'Expanded' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1181:27 - undefined_method
+  error - The method 'FilledButton' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1182:36 - undefined_method
+  error - Undefined name 'ScaffoldMessenger' - lib\screens\osm_map_home_screen.dart:1194:41 - undefined_identifier
+  error - The name 'SnackBar' isn't a class - lib\screens\osm_map_home_screen.dart:1196:49 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1198:51 - undefined_method
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1202:38 - undefined_method
+  error - The name 'SizedBox' isn't a class - lib\screens\osm_map_home_screen.dart:1208:29 - creation_with_non_type
+  error - The method 'SizedBox' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1209:23 - undefined_method
+  error - Undefined name 'FilledButton' - lib\screens\osm_map_home_screen.dart:1211:32 - undefined_identifier
+  error - Undefined name 'ScaffoldMessenger' - lib\screens\osm_map_home_screen.dart:1227:31 - undefined_identifier
+  error - The name 'SnackBar' isn't a class - lib\screens\osm_map_home_screen.dart:1228:39 - creation_with_non_type
+  error - The method 'Text' isn't defined for the type '_DriverActiveJobsSheet' - lib\screens\osm_map_home_screen.dart:1229:46 - undefined_method
+  error - The name 'Text' isn't a class - lib\screens\osm_map_home_screen.dart:1233:40 - creation_with_non_type
+  error - Classes can only extend other classes - lib\screens\osm_map_home_screen.dart:1250:34 - extends_non_class
+  error - Undefined class 'ScrollController' - lib\screens\osm_map_home_screen.dart:1251:9 - undefined_class
+  error - Undefined class 'Widget' - lib\screens\osm_map_home_screen.dart:1255:3 - undefined_class
+warning - The method doesn't override an inherited method - lib\screens\osm_map_home_screen.dart:1255:10 - override_on_non_overriding_member
+  error - Undefined class 'BuildContext' - lib\screens\osm_map_home_screen.dart:1255:16 - undefined_class
+warning - The member 'notifyListeners' can only be used within 'package:flutter/src/foundation/change_notifier.dart' or a test - lib\screens\profile_screen.dart:165:16 - invalid_use_of_visible_for_testing_member
+warning - The member 'notifyListeners' can only be used within instance members of subclasses of 'ChangeNotifier' - lib\screens\profile_screen.dart:165:16 - invalid_use_of_protected_member
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:217:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:258:50 - use_build_context_synchronously
+warning - The value of the local variable 'isDriver' isn't used - lib\screens\profile_screen.dart:275:11 - unused_local_variable
+warning - The value of the local variable 'cs' isn't used - lib\screens\profile_screen.dart:276:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:363:36 - deprecated_member_use
+warning - The '!' will have no effect because the receiver can't be null - lib\screens\profile_screen.dart:499:28 - unnecessary_non_null_assertion
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:38:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:105:99 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:156:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:198:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:201:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:212:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\role_select_screen.dart:241:79 - deprecated_member_use
+  error - The named parameter 'builder' is required, but there's no corresponding argument - lib\screens\user_management_screen.dart:17:13 - missing_required_argument
+  error - The argument type 'SupabaseQueryBuilder' can't be assigned to the parameter type 'Stream<List<Map<String, dynamic>>>?'.  - lib\screens\user_management_screen.dart:18:17 - argument_type_not_assignable
+  error - Expected an identifier - lib\screens\user_management_screen.dart:18:25 - missing_identifier
+  error - Expected to find ',' - lib\screens\user_management_screen.dart:18:26 - expected_token
+  error - Unterminated string literal - lib\screens\user_management_screen.dart:18:101 - unterminated_string_literal
+  error - Expected to find ',' - lib\screens\user_management_screen.dart:19:9 - expected_token
+  error - The named parameter 'builder' isn't defined - lib\screens\user_management_screen.dart:19:9 - undefined_named_parameter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:44:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:50:69 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\user_management_screen.dart:50:102 - deprecated_member_use
+  error - Expected to find ')' - lib\screens\user_management_screen.dart:86:6 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\empty_state.dart:27:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\status_chip.dart:61:18 - deprecated_member_use
+

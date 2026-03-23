@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -14,44 +14,44 @@ class OffersInboxScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = AuthService().currentUser?.uid;
+    final uid = AuthService().currentUser?.id;
 
     if (uid == null) {
       return const Center(child: Text("Oturum yok. Tekrar giriş yap."));
     }
 
-    if (appState.role != "shipper") {
+    final isShipperView = appState.isAdmin ? appState.adminViewRole == "shipper" : appState.role == "shipper";
+    if (!isShipperView) {
       return const Center(child: Text("Bu ekran Yük Sahibi içindir."));
     }
 
-    final loadsQuery = FirebaseFirestore.instance
-        .collection("loads")
-        .where("shipperId", isEqualTo: uid)
-        .where("status", whereIn: [
-      "open",
-      "matched",
-      "delivered_pending"
-    ]).orderBy("createdAt", descending: true);
+    final stream = Supabase.instance.client
+        .from("loads")
+        .stream(primaryKey: ['id'])
+        .eq("shipperId", uid)
+        .order("createdAt", ascending: false);
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: loadsQuery.snapshots(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: stream,
       builder: (context, snap) {
         if (snap.hasError) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                "Veriler şu an yüklenemiyor. Eğer bu ilk kez oluyorsa Firebase Index gerekebilir.\n"
+                "Veriler şu an yüklenemiyor.\n"
                 "Birazdan tekrar dene.",
                 textAlign: TextAlign.center,
               ),
             ),
           );
         }
-        if (!snap.hasData)
+        if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
 
-        final loads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+        final allLoads = snap.data!.map((d) => Load.fromMap(d)).toList();
+        final loads = allLoads.where((j) => ['open', 'matched', 'delivered_pending'].contains(j.status)).toList();
 
         // ✅ BOŞKEN DE ListView DÖNDÜR (sheet + scroll controller düzgün çalışsın)
         if (loads.isEmpty) {
@@ -68,7 +68,8 @@ class OffersInboxScreen extends StatelessWidget {
                   icon: const Icon(Icons.add),
                   label: const Text("İlan Ver"),
                   onPressed: () {
-                    Navigator.push(
+                    // ignore: use_build_context_synchronously
+Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (_) => const LoadCreateScreen()),
@@ -96,7 +97,8 @@ class OffersInboxScreen extends StatelessWidget {
                   icon: const Icon(Icons.add),
                   label: const Text("İlan Ver"),
                   onPressed: () {
-                    Navigator.push(
+                    // ignore: use_build_context_synchronously
+Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (_) => const LoadCreateScreen()),
@@ -120,9 +122,10 @@ class _LoadOffersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final offersQuery = FirebaseFirestore.instance
-        .collection("offers")
-        .where("loadId", isEqualTo: load.id);
+    final offersStream = Supabase.instance.client
+        .from("offers")
+        .stream(primaryKey: ['id'])
+        .eq("loadId", load.id);
 
     final acceptedAlready = (load.acceptedOfferId != null);
     final cs = Theme.of(context).colorScheme;
@@ -179,12 +182,14 @@ class _LoadOffersCard extends StatelessWidget {
                             try {
                               await _deleteLoadWithOffers(loadId: load.id);
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("İlan silindi ✅")),
                               );
                             } catch (e) {
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Silme hatası: $e")),
                               );
                             }
@@ -239,17 +244,18 @@ class _LoadOffersCard extends StatelessWidget {
                         if (ok != true) return;
 
                         try {
-                          final loadSnap = await FirebaseFirestore.instance
-                              .collection("loads")
-                              .doc(load.id)
-                              .get();
-                          final data = loadSnap.data() ?? {};
+                          final data = await Supabase.instance.client
+                              .from("loads")
+                              .select()
+                              .eq("id", load.id)
+                              .maybeSingle() ?? {};
                           final driverId =
                               (data["acceptedDriverId"] ?? "").toString();
 
                           if (driverId.isEmpty) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                   content: Text(
                                       "Şoför bilgisi bulunamadı (acceptedDriverId boş).")),
@@ -257,6 +263,7 @@ class _LoadOffersCard extends StatelessWidget {
                             return;
                           }
 
+                          if (!context.mounted) return;
                           await _rateUserDialog(
                             context,
                             toUserId: driverId,
@@ -266,23 +273,24 @@ class _LoadOffersCard extends StatelessWidget {
                             nameHint: "Şoför",
                           );
 
-                          await FirebaseFirestore.instance
-                              .collection("loads")
-                              .doc(load.id)
+                          await Supabase.instance.client
+                              .from("loads")
                               .update({
                             "status": "done",
-                            "doneAt": FieldValue.serverTimestamp(),
-                          });
+                            "doneAt": DateTime.now().toUtc().toIso8601String(),
+                          }).eq("id", load.id);
 
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content:
                                     Text("Teslim onaylandı ✅ İş tamamlandı.")),
                           );
                         } catch (e) {
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Hata: $e")),
                           );
                         }
@@ -295,8 +303,8 @@ class _LoadOffersCard extends StatelessWidget {
             const SizedBox(height: 10),
             const Divider(),
 
-            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: offersQuery.snapshots(),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: offersStream,
               builder: (context, snap) {
                 if (snap.hasError) return Text("Teklif hata: ${snap.error}");
                 if (!snap.hasData) {
@@ -307,7 +315,7 @@ class _LoadOffersCard extends StatelessWidget {
                 }
 
                 final offers =
-                    snap.data!.docs.map((d) => Offer.fromDoc(d)).toList();
+                    snap.data!.map((d) => Offer.fromMap(d)).toList();
                 if (offers.isEmpty) return const Text("Henüz teklif yok.");
 
                 return Column(
@@ -417,7 +425,7 @@ class _LoadOffersCard extends StatelessWidget {
                                       border: Border.all(
                                           color: statusColor(o.status)),
                                       color: statusColor(o.status)
-                                          .withOpacity(0.12),
+                                          .withValues(alpha: 0.12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -444,16 +452,15 @@ class _LoadOffersCard extends StatelessWidget {
                                     tooltip: "İşlemler",
                                     onSelected: (v) async {
                                       if (v == "reject") {
-                                        await FirebaseFirestore.instance
-                                            .collection("offers")
-                                            .doc(o.id)
+                                        await Supabase.instance.client
+                                            .from("offers")
                                             .update({
                                           "status": "rejected",
-                                          "rejectedAt":
-                                              FieldValue.serverTimestamp(),
-                                        });
+                                          "rejectedAt": DateTime.now().toUtc().toIso8601String(),
+                                        }).eq("id", o.id);
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context)
+                                        // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
                                               content:
@@ -513,7 +520,7 @@ class _LoadOffersCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: Colors.orange),
-                                    color: Colors.orange.withOpacity(0.10),
+                                    color: Colors.orange.withValues(alpha: 0.10),
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -575,7 +582,8 @@ class _LoadOffersCard extends StatelessWidget {
                                                   counterNote: res.$2,
                                                 );
                                                 if (!context.mounted) return;
-                                                ScaffoldMessenger.of(context)
+                                                // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                                     .showSnackBar(
                                                   const SnackBar(
                                                       content: Text(
@@ -583,7 +591,8 @@ class _LoadOffersCard extends StatelessWidget {
                                                 );
                                               } catch (e) {
                                                 if (!context.mounted) return;
-                                                ScaffoldMessenger.of(context)
+                                                // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                                     .showSnackBar(
                                                   SnackBar(
                                                       content:
@@ -643,18 +652,16 @@ class _LoadOffersCard extends StatelessWidget {
 
                                                     if (ok != true) return;
 
-                                                    await FirebaseFirestore
-                                                        .instance
-                                                        .collection("offers")
-                                                        .doc(o.id)
+                                                    await Supabase.instance.client
+                                                        .from("offers")
                                                         .update({
                                                       "status": "rejected",
-                                                      "rejectedAt": FieldValue
-                                                          .serverTimestamp(),
-                                                    });
+                                                      "rejectedAt": DateTime.now().toUtc().toIso8601String(),
+                                                    }).eq("id", o.id);
 
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                             context)
                                                         .showSnackBar(
@@ -682,8 +689,9 @@ class _LoadOffersCard extends StatelessWidget {
                                                       driverId: o.driverId,
                                                     );
 
-                                                    if (!context.mounted)
+                                                    if (!context.mounted) {
                                                       return;
+                                                    }
                                                     ScaffoldMessenger.of(
                                                             context)
                                                         .showSnackBar(
@@ -765,12 +773,12 @@ class _LoadOffersCard extends StatelessWidget {
     required int counterPrice,
     required String counterNote,
   }) async {
-    await FirebaseFirestore.instance.collection("offers").doc(offerId).update({
+    await Supabase.instance.client.from("offers").update({
       "counterPrice": counterPrice,
       "counterNote": counterNote,
       "status": "countered",
-      "counterAt": FieldValue.serverTimestamp(),
-    });
+      "counterAt": DateTime.now().toUtc().toIso8601String(),
+    }).eq("id", offerId);
   }
 
   Future<void> _acceptOffer({
@@ -778,44 +786,26 @@ class _LoadOffersCard extends StatelessWidget {
     required String offerId,
     required String driverId,
   }) async {
-    final db = FirebaseFirestore.instance;
+    final db = Supabase.instance.client;
 
-    final loadRef = db.collection("loads").doc(loadId);
-    final offerRef = db.collection("offers").doc(offerId);
-
-    final othersSnap =
-        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-
-    final batch = db.batch();
-
-    batch.update(loadRef, {
+    await db.from("loads").update({
       "acceptedOfferId": offerId,
       "acceptedDriverId": driverId,
       "status": "matched",
-    });
+    }).eq("id", loadId);
 
-    batch.update(offerRef, {"status": "accepted"});
+    await db.from("offers").update({"status": "accepted"}).eq("id", offerId);
 
-    for (final d in othersSnap.docs) {
-      if (d.id == offerId) continue;
-      batch.update(d.reference, {"status": "rejected"});
+    final othersSnap = await db.from("offers").select().eq("loadId", loadId).neq("id", offerId);
+    for (final d in othersSnap) {
+      await db.from("offers").update({"status": "rejected"}).eq("id", d["id"]);
     }
-
-    await batch.commit();
   }
 
   Future<void> _deleteLoadWithOffers({required String loadId}) async {
-    final db = FirebaseFirestore.instance;
-    final offersSnap =
-        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-
-    final batch = db.batch();
-    for (final d in offersSnap.docs) {
-      batch.delete(d.reference);
-    }
-    batch.delete(db.collection("loads").doc(loadId));
-
-    await batch.commit();
+    final db = Supabase.instance.client;
+    await db.from("offers").delete().eq("loadId", loadId);
+    await db.from("loads").delete().eq("id", loadId);
   }
 
   Future<void> _rateUserDialog(
@@ -879,45 +869,35 @@ class _LoadOffersCard extends StatelessWidget {
 
     if (ok != true) return;
 
-    final fromUid = AuthService().currentUser?.uid;
+    final fromUid = AuthService().currentUser?.id;
     if (fromUid == null) return;
 
-    final db = FirebaseFirestore.instance;
+    final db = Supabase.instance.client;
 
-    await db.collection("ratings").add({
+    await db.from("ratings").insert({
       "loadId": loadId,
       "fromUserId": fromUid,
       "toUserId": toUserId,
       "toRole": toRole,
       "stars": stars,
       "note": noteCtrl.text.trim(),
-      "createdAt": FieldValue.serverTimestamp(),
     });
 
-    final userRef = db.collection("users").doc(toUserId);
+    final data = await db.from("users").select().eq("id", toUserId).maybeSingle() ?? {};
 
-    await db.runTransaction((tx) async {
-      final snap = await tx.get(userRef);
-      final data = snap.data() ?? {};
+    final prevAvg = (data["ratingAvg"] is num)
+        ? (data["ratingAvg"] as num).toDouble()
+        : 0.0;
+    final prevCount =
+        (data["ratingCount"] is int) ? data["ratingCount"] as int : 0;
 
-      final prevAvg = (data["ratingAvg"] is num)
-          ? (data["ratingAvg"] as num).toDouble()
-          : 0.0;
-      final prevCount =
-          (data["ratingCount"] is int) ? data["ratingCount"] as int : 0;
+    final newCount = prevCount + 1;
+    final newAvg = ((prevAvg * prevCount) + stars) / newCount;
 
-      final newCount = prevCount + 1;
-      final newAvg = ((prevAvg * prevCount) + stars) / newCount;
-
-      tx.set(
-        userRef,
-        {
-          "ratingAvg": newAvg,
-          "ratingCount": newCount,
-          "updatedAt": FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-    });
+    await db.from("users").update({
+      "ratingAvg": newAvg,
+      "ratingCount": newCount,
+      "updatedAt": DateTime.now().toUtc().toIso8601String(),
+    }).eq("id", toUserId);
   }
 }

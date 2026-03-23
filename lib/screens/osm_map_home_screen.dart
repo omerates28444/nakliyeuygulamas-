@@ -1,18 +1,17 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
 
 import '../app_state.dart';
 import '../models/load.dart';
 import '../models/offer.dart';
 import 'offers_inbox_screen.dart';
-import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
-import '../services/load_service.dart';
+// ActiveJobsBottomBar burada
 import 'profile_screen.dart';
 
 class OsmMapHomeScreen extends StatefulWidget {
@@ -38,10 +37,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   /// Panel/iş listesinden haritayı o işe odakla
   void focusJobById(String jobId) async {
     try {
-      final doc =
-          await FirebaseFirestore.instance.collection("loads").doc(jobId).get();
-      if (!doc.exists) return;
-      final l = Load.fromDoc(doc);
+      final data =
+          await Supabase.instance.client.from("loads").select().eq("id", jobId).maybeSingle();
+      if (data == null) return;
+      final l = Load.fromMap(data);
       if (l.fromLat == null || l.fromLng == null) return;
       _mapController.move(LatLng(l.fromLat!, l.fromLng!), 14);
     } catch (_) {}
@@ -89,7 +88,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   List<Marker> _buildMarkers(List<Load> loads) {
@@ -104,7 +104,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
           height: 46,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.20),
+              color: Colors.blue.withValues(alpha: 0.20),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -147,58 +147,39 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     required Load load,
     required Offer myOffer,
   }) async {
-    final db = FirebaseFirestore.instance;
+    final db = Supabase.instance.client;
 
-    await db.runTransaction((tx) async {
-      final loadRef = db.collection("loads").doc(load.id);
-      final offerRef = db.collection("offers").doc(myOffer.id);
+    final data = await db.from("loads").select().eq("id", load.id).maybeSingle() ?? {};
+    final status = (data["status"] ?? "open").toString();
+    final acceptedOfferId = data["acceptedOfferId"];
 
-      final loadSnap = await tx.get(loadRef);
-      if (!loadSnap.exists) throw Exception("İlan bulunamadı");
-
-      final data = loadSnap.data() as Map<String, dynamic>;
-      final status = (data["status"] ?? "open").toString();
-      final acceptedOfferId = data["acceptedOfferId"];
-
-      // ✅ Başkası aldıysa / ilan kapalıysa engelle
-      if (status != "open" && status != "matched") {
-        throw Exception("Bu ilan artık uygun değil.");
-      }
-      if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
-        throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
-      }
-
-      // ✅ benim teklifimi accepted
-      tx.update(offerRef, {"status": "accepted"});
-
-      // ✅ load'u matched yap
-      tx.update(loadRef, {
-        "status": "matched",
-        "acceptedOfferId": myOffer.id,
-        "acceptedDriverId": myOffer.driverId,
-      });
-    });
-
-    // ✅ transaction sonrası diğer teklifleri reddet
-    final others =
-        await db.collection("offers").where("loadId", isEqualTo: load.id).get();
-    final batch = db.batch();
-    for (final d in others.docs) {
-      if (d.id == myOffer.id) continue;
-      batch.update(d.reference, {"status": "rejected"});
+    if (status != "open" && status != "matched") {
+      throw Exception("Bu ilan artık uygun değil.");
     }
-    await batch.commit();
+    if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
+      throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
+    }
+
+    await db.from("offers").update({"status": "accepted"}).eq("id", myOffer.id);
+
+    await db.from("loads").update({
+      "status": "matched",
+      "acceptedOfferId": myOffer.id,
+      "acceptedDriverId": myOffer.driverId,
+    }).eq("id", load.id);
+
+    final others = await db.from("offers").select().eq("loadId", load.id).neq("id", myOffer.id);
+    for (final d in others) {
+      await db.from("offers").update({"status": "rejected"}).eq("id", d["id"]);
+    }
   }
 
   // ✅ driver karşı teklifi reddedince: teklif silinsin
   Future<void> _driverRejectCounter({required Offer myOffer}) async {
-    await FirebaseFirestore.instance
-        .collection("offers")
-        .doc(myOffer.id)
-        .update({
+    await Supabase.instance.client.from("offers").update({
       "status": "driver_rejected_counter",
-      "driverRejectedAt": FieldValue.serverTimestamp(),
-    });
+      "driverRejectedAt": DateTime.now().toUtc().toIso8601String(),
+    }).eq("id", myOffer.id);
   }
 
   bool _isExpiredForDelete(Load l) {
@@ -207,24 +188,16 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   Future<void> _deleteLoadWithOffersById(String loadId) async {
-    final db = FirebaseFirestore.instance;
-
-    final offersSnap =
-        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
-    final batch = db.batch();
-
-    for (final d in offersSnap.docs) {
-      batch.delete(d.reference);
-    }
-    batch.delete(db.collection("loads").doc(loadId));
-
-    await batch.commit();
+    final db = Supabase.instance.client;
+    await db.from("offers").delete().eq("loadId", loadId);
+    await db.from("loads").delete().eq("id", loadId);
   }
 
   Future<void> _cleanupExpiredLoads(List<Load> loads) async {
-    if (appState.role != "shipper") return;
+    final isDriverView = appState.isAdmin ? appState.adminViewRole == "driver" : appState.role == "driver";
+    if (isDriverView) return;
 
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = AuthService().currentUser?.id;
     if (uid == null) return;
 
     final myExpired = loads
@@ -246,14 +219,14 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant),
         boxShadow: [
           BoxShadow(
             blurRadius: 14,
             offset: const Offset(0, 6),
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
           ),
         ],
       ),
@@ -293,7 +266,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: isOpen
-            ? Colors.green.withOpacity(0.15)
+            ? Colors.green.withValues(alpha: 0.15)
             : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: isOpen ? Colors.green : cs.outlineVariant),
@@ -312,7 +285,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   void _openJobSheet(Load l, LatLng dest) {
-    final isDriver = appState.role == "driver";
+    final isDriver = appState.isAdmin ? appState.adminViewRole == "driver" : appState.role == "driver";
     final priceCtrl = TextEditingController(text: "3000");
     final noteCtrl = TextEditingController();
 
@@ -400,19 +373,18 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                   if (isDriver) ...[
                     Builder(
                       builder: (context) {
-                        final uid = FirebaseAuth.instance.currentUser?.uid;
+                        final uid = AuthService().currentUser?.id;
 
-                        final Stream<QuerySnapshot<Map<String, dynamic>>>
+                        final Stream<List<Map<String, dynamic>>>
                             myOfferStream = (uid == null)
                                 ? const Stream.empty()
-                                : FirebaseFirestore.instance
-                                    .collection("offers")
-                                    .where("loadId", isEqualTo: l.id)
-                                    .where("driverId", isEqualTo: uid)
-                                    .snapshots();
+                                : Supabase.instance.client
+                                    .from("offers")
+                                    .stream(primaryKey: ['id'])
+                                    .eq("loadId", l.id)
+                                    .order("createdAt", ascending: false);
 
-                        return StreamBuilder<
-                            QuerySnapshot<Map<String, dynamic>>>(
+                        return StreamBuilder<List<Map<String, dynamic>>>(
                           stream: myOfferStream,
                           builder: (context, snap) {
                             if (snap.hasError) {
@@ -426,22 +398,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                               );
                             }
 
-                            final docs = snap.data!.docs.toList();
-
-                            // ✅ createdAt'e göre (client-side) sırala: en yeni en üstte
-                            docs.sort((a, b) {
-                              final ta = (a.data()["createdAt"] as Timestamp?)
-                                      ?.millisecondsSinceEpoch ??
-                                  0;
-                              final tb = (b.data()["createdAt"] as Timestamp?)
-                                      ?.millisecondsSinceEpoch ??
-                                  0;
-                              return tb.compareTo(ta);
-                            });
+                            final docs = snap.data!.where((d) => d['driverId'] == uid).toList();
 
                             // ✅ Tüm teklif geçmişin (en yeni -> en eski)
                             final myOffers =
-                                docs.map((d) => Offer.fromDoc(d)).toList();
+                                docs.map((d) => Offer.fromMap(d)).toList();
 
                             // ✅ En son teklifin
                             final Offer? lastOffer =
@@ -513,10 +474,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                                             FontWeight.w700),
                                                   ),
                                                 ),
-                                                if ((o.note ?? "")
+                                                if (o.note
                                                     .trim()
                                                     .isNotEmpty)
-                                                  Text((o.note ?? "").trim(),
+                                                  Text(o.note.trim(),
                                                       style: const TextStyle(
                                                           fontSize: 12)),
                                               ],
@@ -545,93 +506,45 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                               ? null
                                               : () async {
                                                   try {
-                                                    final db = FirebaseFirestore
-                                                        .instance;
+                                                    final db = Supabase.instance.client;
 
-                                                    // ✅ Sabit ilanı kabul et: teklif oluştur + load'u matched yap (transaction)
-                                                    final newOfferRef = db
-                                                        .collection("offers")
-                                                        .doc();
+                                                    final data = await db.from("loads").select().eq("id", l.id).maybeSingle() ?? {};
+                                                    final status = (data["status"] ?? "open").toString();
+                                                    final acceptedOfferId = data["acceptedOfferId"];
 
-                                                    await db.runTransaction(
-                                                        (tx) async {
-                                                      final loadRef = db
-                                                          .collection("loads")
-                                                          .doc(l.id);
-
-                                                      final loadSnap =
-                                                          await tx.get(loadRef);
-                                                      if (!loadSnap.exists)
-                                                        throw Exception(
-                                                            "İlan bulunamadı");
-
-                                                      final data =
-                                                          loadSnap.data()
-                                                              as Map<String,
-                                                                  dynamic>;
-                                                      final status =
-                                                          (data["status"] ??
-                                                                  "open")
-                                                              .toString();
-                                                      final acceptedOfferId =
-                                                          data[
-                                                              "acceptedOfferId"];
-
-                                                      if (status != "open") {
-                                                        throw Exception(
-                                                            "Bu ilan artık uygun değil.");
-                                                      }
-                                                      if (acceptedOfferId !=
-                                                              null &&
-                                                          acceptedOfferId
-                                                              .toString()
-                                                              .isNotEmpty) {
-                                                        throw Exception(
-                                                            "Bu ilan başka bir şoförle eşleşmiş.");
-                                                      }
-
-                                                      tx.set(newOfferRef, {
-                                                        "loadId": l.id,
-                                                        "driverId": uid,
-                                                        "driverName": appState
-                                                            .displayName,
-                                                        "price": fixedPrice,
-                                                        "note": "",
-                                                        "status": "accepted",
-                                                        "createdAt": FieldValue
-                                                            .serverTimestamp(),
-                                                      });
-
-                                                      tx.update(loadRef, {
-                                                        "status": "matched",
-                                                        "acceptedOfferId":
-                                                            newOfferRef.id,
-                                                        "acceptedDriverId": uid,
-                                                      });
-                                                    });
-
-                                                    // ✅ diğer teklifleri reddet
-                                                    final others = await db
-                                                        .collection("offers")
-                                                        .where("loadId",
-                                                            isEqualTo: l.id)
-                                                        .get();
-
-                                                    final batch = db.batch();
-                                                    for (final d
-                                                        in others.docs) {
-                                                      if (d.id ==
-                                                          newOfferRef.id)
-                                                        continue;
-                                                      batch.update(
-                                                          d.reference, {
-                                                        "status": "rejected"
-                                                      });
+                                                    if (status != "open") {
+                                                      throw Exception("Bu ilan artık uygun değil.");
                                                     }
-                                                    await batch.commit();
+                                                    if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
+                                                      throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
+                                                    }
+
+                                                    final offerData = await db.from("offers").insert({
+                                                      "loadId": l.id,
+                                                      "driverId": uid,
+                                                      "driverName": appState.displayName,
+                                                      "price": fixedPrice,
+                                                      "note": "",
+                                                      "status": "accepted",
+                                                    }).select().maybeSingle();
+
+                                                    if (offerData == null) throw Exception("Teklif oluşturulamadı");
+                                                    final newOfferId = offerData['id'].toString();
+
+                                                    await db.from("loads").update({
+                                                      "status": "matched",
+                                                      "acceptedOfferId": newOfferId,
+                                                      "acceptedDriverId": uid,
+                                                    }).eq("id", l.id);
+
+                                                    final others = await db.from("offers").select().eq("loadId", l.id).neq("id", newOfferId);
+                                                    for (final d in others) {
+                                                      await db.from("offers").update({"status": "rejected"}).eq("id", d["id"]);
+                                                    }
 
                                                     if (!mounted) return;
-                                                    Navigator.pop(context);
+                                                    // ignore: use_build_context_synchronously
+Navigator.pop(context);
                                                     _snack(
                                                         "Sabit ücret kabul edildi ✅");
                                                   } catch (e) {
@@ -686,10 +599,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                                         FontWeight.w700),
                                               ),
                                             ),
-                                            if ((o.note ?? "")
+                                            if (o.note
                                                 .trim()
                                                 .isNotEmpty)
-                                              Text((o.note ?? "").trim(),
+                                              Text(o.note.trim(),
                                                   style: const TextStyle(
                                                       fontSize: 12)),
                                           ],
@@ -721,8 +634,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                     label: const Text("Teklifi Gönder"),
                                     onPressed: () async {
                                       try {
-                                        final uid2 = FirebaseAuth
-                                            .instance.currentUser?.uid;
+                                        final uid2 = AuthService().currentUser?.id;
                                         if (uid2 == null) {
                                           _snack(
                                               "Oturum yok. Tekrar giriş yap.");
@@ -738,21 +650,20 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                           return;
                                         }
 
-                                        await FirebaseFirestore.instance
-                                            .collection("offers")
-                                            .add({
+                                        await Supabase.instance.client
+                                            .from("offers")
+                                            .insert({
                                           "loadId": l.id,
                                           "driverId": uid2,
                                           "driverName": appState.displayName,
                                           "price": price,
                                           "note": noteCtrl.text.trim(),
                                           "status": "sent",
-                                          "createdAt":
-                                              FieldValue.serverTimestamp(),
                                         });
 
                                         if (!mounted) return;
-                                        Navigator.pop(context);
+                                        // ignore: use_build_context_synchronously
+Navigator.pop(context);
                                         _snack("Teklif gönderildi ✅");
                                       } catch (e) {
                                         _snack("Teklif hatası: $e");
@@ -831,10 +742,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                                           FontWeight.w700),
                                                 ),
                                               ),
-                                              if ((o.note ?? "")
+                                              if (o.note
                                                   .trim()
                                                   .isNotEmpty)
-                                                Text((o.note ?? "").trim(),
+                                                Text(o.note.trim(),
                                                     style: const TextStyle(
                                                         fontSize: 12)),
                                             ],
@@ -890,7 +801,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                                             load: l,
                                                             myOffer: myOffer);
                                                         if (!mounted) return;
-                                                        Navigator.pop(context);
+                                                        // ignore: use_build_context_synchronously
+Navigator.pop(context);
                                                         _snack(
                                                             "Karşı teklif kabul edildi ✅");
                                                       } catch (e) {
@@ -969,7 +881,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 
   // ✅ HARİTADAKİ HAREKETLİ PANEL
   Widget _buildDraggablePanel() {
-    final isDriver = appState.role == "driver";
+    final isDriver = appState.isAdmin ? appState.adminViewRole == "driver" : appState.role == "driver";
 
     return DraggableScrollableSheet(
       initialChildSize: 0.12,
@@ -1003,7 +915,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                   width: 44,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -1029,12 +941,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   @override
   Widget build(BuildContext context) {
     const trCenter = LatLng(39.0, 35.0);
-    final loadsStream =
-        FirebaseFirestore.instance.collection("loads").snapshots();
+    final stream = Supabase.instance.client.from("loads").stream(primaryKey: ['id']).order("createdAt", ascending: false);
 
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: loadsStream,
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: stream,
         builder: (context, snap) {
           if (snap.hasError) {
             return Center(child: Text("Harita veri hatası: ${snap.error}"));
@@ -1043,7 +954,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final allLoads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+          final allLoads = snap.data!.map((d) => Load.fromMap(d)).toList();
 
           // ✅ Driver tarafında: teslim tarihinden 1 hafta geçen ilanları gösterme
           final loads = allLoads.where((l) => !_isExpiredForDelete(l)).toList();
@@ -1060,13 +971,13 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
             children: [
               FlutterMap(
                 mapController: _mapController,
-                options: MapOptions(
+                options: const MapOptions(
                   initialCenter: trCenter,
                   initialZoom: 5.3,
                   minZoom: 3,
                   maxZoom: 19,
                   interactionOptions:
-                      const InteractionOptions(flags: InteractiveFlag.all),
+                      InteractionOptions(flags: InteractiveFlag.all),
                 ),
                 children: [
                   TileLayer(
@@ -1098,7 +1009,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                       IconButton.filledTonal(
                         tooltip: "Profil",
                         onPressed: () {
-                          Navigator.push(
+                          // ignore: use_build_context_synchronously
+Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (_) => const ProfileScreen()),
@@ -1149,7 +1061,7 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = AuthService().currentUser?.id;
     if (uid == null) {
       return ListView(
         controller: scrollController,
@@ -1162,15 +1074,14 @@ class _DriverActiveJobsSheet extends StatelessWidget {
       );
     }
 
-    final q = FirebaseFirestore.instance
-        .collection("loads")
-        .where("acceptedDriverId", isEqualTo: uid)
-        .where("status", whereIn: ["matched", "delivered_pending"]).orderBy(
-            "createdAt",
-            descending: true);
+    final stream = Supabase.instance.client
+        .from("loads")
+        .stream(primaryKey: ['id'])
+        .eq("acceptedDriverId", uid)
+        .order("createdAt", ascending: false);
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: q.snapshots(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: stream,
       builder: (context, snap) {
         if (snap.hasError) {
           return ListView(
@@ -1195,7 +1106,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
           );
         }
 
-        final jobs = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+        final allJobs = snap.data!.map((d) => Load.fromMap(d)).toList();
+        final jobs = allJobs.where((j) => ['matched', 'delivered_pending'].contains(j.status)).toList();
 
         return ListView(
           controller: scrollController,
@@ -1254,7 +1166,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                                 final lng = j.fromLng;
 
                                 if (lat == null || lng == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text("Bu işin konumu yok.")),
                                   );
@@ -1268,7 +1181,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                                 final ok = await launchUrl(uri,
                                     mode: LaunchMode.externalApplication);
                                 if (!ok && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content:
                                             Text("Google Maps açılamadı.")),
@@ -1285,17 +1199,16 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                               onPressed: isPending
                                   ? null
                                   : () async {
-                                      await FirebaseFirestore.instance
-                                          .collection("loads")
-                                          .doc(j.id)
+                                      await Supabase.instance.client
+                                          .from("loads")
                                           .update({
                                         "status": "delivered_pending",
-                                        "deliveredAt":
-                                            FieldValue.serverTimestamp(),
-                                      });
+                                        "deliveredAt": DateTime.now().toUtc().toIso8601String(),
+                                      }).eq("id", j.id);
 
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
+                                        // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
                                               content:
@@ -1314,28 +1227,22 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                         width: double.infinity,
                         child: FilledButton.tonal(
                           onPressed: () async {
-                            await FirebaseFirestore.instance
-                                .collection("loads")
-                                .doc(j.id)
+                            await Supabase.instance.client
+                                .from("loads")
                                 .update({
                               "status": "open",
-                              "acceptedOfferId": FieldValue.delete(),
-                              "acceptedDriverId": FieldValue.delete(),
-                            });
+                              "acceptedOfferId": null,
+                              "acceptedDriverId": null,
+                            }).eq("id", j.id);
 
-                            final offers = await FirebaseFirestore.instance
-                                .collection("offers")
-                                .where("loadId", isEqualTo: j.id)
-                                .get();
-
-                            final batch = FirebaseFirestore.instance.batch();
-                            for (final d in offers.docs) {
-                              batch.delete(d.reference);
-                            }
-                            await batch.commit();
+                            await Supabase.instance.client
+                                .from("offers")
+                                .delete()
+                                .eq("loadId", j.id);
 
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text("İş iptal edildi ✅")),
                               );

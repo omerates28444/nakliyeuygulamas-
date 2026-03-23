@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/auth_service.dart';
 import 'package:flutter/material.dart';
 
-import '../models/load.dart';
 import 'map_picker_screen.dart';
 
 class LoadCreateScreen extends StatefulWidget {
@@ -37,7 +36,8 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    // ignore: use_build_context_synchronously
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<void> _publish() async {
@@ -45,7 +45,7 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
     setState(() => saving = true);
 
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = AuthService().currentUser?.id;
       if (uid == null) {
         _snack("Oturum yok. Tekrar giriş yap.");
         return;
@@ -79,17 +79,16 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
         }
       }
 
-      // Firestore'a yaz
-      await FirebaseFirestore.instance.collection("loads").add({
+      // Supabase'e yaz
+      await Supabase.instance.client.from("loads").insert({
         "fromCity": from,
         "toCity": to,
-        "pickupDate": Timestamp.fromDate(pickupDate),
+        "pickupDate": pickupDate.toUtc().toIso8601String(),
         "weightKg": weight,
         "priceType": priceType,
         "fixedPrice": priceType == "fixed" ? fixedPrice : null,
         "status": "open",
         "shipperId": uid,
-        "createdAt": FieldValue.serverTimestamp(),
 
         // 🔥 KONUM
         "fromLat": selectedLat,
@@ -97,7 +96,8 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
       });
 
       if (!mounted) return;
-      Navigator.pop(context);
+      // ignore: use_build_context_synchronously
+Navigator.pop(context);
 
       _snack("İlan yayınlandı ✅");
     } catch (e) {
@@ -165,7 +165,8 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
             onPressed: saving
                 ? null
                 : () async {
-                    final result = await Navigator.push(
+                    final result = await // ignore: use_build_context_synchronously
+Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (_) => const MapPickerScreen()),

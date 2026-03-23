@@ -1,0 +1,6 @@
+﻿Analyzing nakliyeuygulamas-...                                  
+
+  error - Undefined name 'isDriver' - lib\screens\profile_screen.dart:150:11 - undefined_identifier
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:219:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile_screen.dart:261:50 - use_build_context_synchronously
+

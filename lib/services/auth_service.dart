@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => _supabase.auth.currentUser;
 
   Future<void> register({
     required String email,
@@ -16,21 +14,26 @@ class AuthService {
     required String city,
     Map<String, dynamic>? extra,
   }) async {
-    final cred = await _auth.createUserWithEmailAndPassword(
+    final res = await _supabase.auth.signUp(
       email: email.trim(),
       password: password.trim(),
     );
 
-    final uid = cred.user!.uid;
+    final user = res.user;
+    if (user == null) {
+      throw Exception("Kayıt işlemi başarısız.");
+    }
+    
+    final uid = user.id;
 
-    await _db.collection('users').doc(uid).set({
+    await _supabase.from('users').insert({
+      'id': uid,
       'name': name.trim(),
       'role': role,
       'email': email.trim(),
       'phone': phone.trim(),
       'city': city.trim(),
       'extra': extra ?? {},
-      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -38,34 +41,37 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final cred = await _auth.signInWithEmailAndPassword(
+    final res = await _supabase.auth.signInWithPassword(
       email: email.trim(),
       password: password.trim(),
     );
 
-    final uid = cred.user!.uid;
+    final user = res.user;
+    if (user == null) {
+      throw Exception("Giriş işlemi başarısız.");
+    }
 
-    final snap = await _db.collection('users').doc(uid).get();
-    final data = snap.data();
+    final uid = user.id;
+
+    final data = await _supabase.from('users').select().eq('id', uid).maybeSingle();
 
     if (data == null) {
-      throw Exception("Firestore'da kullanıcı profili bulunamadı: users/$uid");
+      throw Exception("Supabase'de kullanıcı profili bulunamadı: users/$uid");
     }
 
     return data;
   }
 
-  // ✅ YENİ: UID ile profil çek (app açılışında otomatik login için)
   Future<Map<String, dynamic>> getProfileByUid(String uid) async {
-    final snap = await _db.collection('users').doc(uid).get();
-    final data = snap.data();
+    final data = await _supabase.from('users').select().eq('id', uid).maybeSingle();
+    
     if (data == null) {
-      throw Exception("Firestore'da kullanıcı profili bulunamadı: users/$uid");
+      throw Exception("Supabase'de kullanıcı profili bulunamadı: users/$uid");
     }
     return data;
   }
 
   Future<void> logout() async {
-    await _auth.signOut();
+    await _supabase.auth.signOut();
   }
-}
+}

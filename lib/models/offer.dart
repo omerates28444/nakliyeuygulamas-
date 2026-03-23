@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Offer {
   final String id;
@@ -27,11 +26,9 @@ class Offer {
     this.counterNote,
   });
 
-  factory Offer.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
-
+  factory Offer.fromMap(Map<String, dynamic> data) {
     return Offer(
-      id: doc.id,
+      id: data['id'].toString(),
       loadId: (data["loadId"] ?? "").toString(),
       driverId: (data["driverId"] ?? "").toString(),
       driverName: (data["driverName"] ?? "").toString(),
