@@ -27,8 +27,11 @@ class OffersInboxScreen extends StatelessWidget {
     final loadsQuery = FirebaseFirestore.instance
         .collection("loads")
         .where("shipperId", isEqualTo: uid)
-        .where("status", whereIn: ["open", "matched", "delivered_pending"])
-        .orderBy("createdAt", descending: true);
+        .where("status", whereIn: [
+      "open",
+      "matched",
+      "delivered_pending"
+    ]).orderBy("createdAt", descending: true);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: loadsQuery.snapshots(),
@@ -39,13 +42,14 @@ class OffersInboxScreen extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 "Veriler şu an yüklenemiyor. Eğer bu ilk kez oluyorsa Firebase Index gerekebilir.\n"
-                    "Birazdan tekrar dene.",
+                "Birazdan tekrar dene.",
                 textAlign: TextAlign.center,
               ),
             ),
           );
         }
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snap.hasData)
+          return const Center(child: CircularProgressIndicator());
 
         final loads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
 
@@ -66,7 +70,8 @@ class OffersInboxScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoadCreateScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const LoadCreateScreen()),
                     );
                   },
                 ),
@@ -93,7 +98,8 @@ class OffersInboxScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoadCreateScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const LoadCreateScreen()),
                     );
                   },
                 ),
@@ -114,8 +120,9 @@ class _LoadOffersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final offersQuery =
-    FirebaseFirestore.instance.collection("offers").where("loadId", isEqualTo: load.id);
+    final offersQuery = FirebaseFirestore.instance
+        .collection("offers")
+        .where("loadId", isEqualTo: load.id);
 
     final acceptedAlready = (load.acceptedOfferId != null);
     final cs = Theme.of(context).colorScheme;
@@ -137,48 +144,52 @@ class _LoadOffersCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     "${load.fromCity} → ${load.toCity}",
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 16),
                   ),
                 ),
                 IconButton(
                   tooltip: "İlanı Sil",
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: (load.status == "matched" || load.status == "delivered_pending")
+                  onPressed: (load.status == "matched" ||
+                          load.status == "delivered_pending")
                       ? null
                       : () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text("İlan Silinsin mi?"),
-                        content: const Text("Bu ilan ve tüm teklifler kalıcı olarak silinecek."),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text("Vazgeç"),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Sil"),
-                          ),
-                        ],
-                      ),
-                    );
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("İlan Silinsin mi?"),
+                              content: const Text(
+                                  "Bu ilan ve tüm teklifler kalıcı olarak silinecek."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text("Vazgeç"),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("Sil"),
+                                ),
+                              ],
+                            ),
+                          );
 
-                    if (ok == true) {
-                      try {
-                        await _deleteLoadWithOffers(loadId: load.id);
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("İlan silindi ✅")),
-                        );
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Silme hatası: $e")),
-                        );
-                      }
-                    }
-                  },
+                          if (ok == true) {
+                            try {
+                              await _deleteLoadWithOffers(loadId: load.id);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("İlan silindi ✅")),
+                              );
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Silme hatası: $e")),
+                              );
+                            }
+                          }
+                        },
                 ),
               ],
             ),
@@ -193,7 +204,8 @@ class _LoadOffersCard extends StatelessWidget {
             if (load.status == "matched")
               const Padding(
                 padding: EdgeInsets.only(top: 6),
-                child: Text("Durum: Eşleşti ✅", style: TextStyle(fontWeight: FontWeight.w800)),
+                child: Text("Durum: Eşleşti ✅",
+                    style: TextStyle(fontWeight: FontWeight.w800)),
               ),
 
             if (load.status == "delivered_pending")
@@ -210,7 +222,8 @@ class _LoadOffersCard extends StatelessWidget {
                           context: context,
                           builder: (_) => AlertDialog(
                             title: const Text("Teslimi onayla?"),
-                            content: const Text("Onaylarsan iş tamamlanır ve şoföre puan verebilirsin."),
+                            content: const Text(
+                                "Onaylarsan iş tamamlanır ve şoföre puan verebilirsin."),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
@@ -226,14 +239,20 @@ class _LoadOffersCard extends StatelessWidget {
                         if (ok != true) return;
 
                         try {
-                          final loadSnap = await FirebaseFirestore.instance.collection("loads").doc(load.id).get();
+                          final loadSnap = await FirebaseFirestore.instance
+                              .collection("loads")
+                              .doc(load.id)
+                              .get();
                           final data = loadSnap.data() ?? {};
-                          final driverId = (data["acceptedDriverId"] ?? "").toString();
+                          final driverId =
+                              (data["acceptedDriverId"] ?? "").toString();
 
                           if (driverId.isEmpty) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Şoför bilgisi bulunamadı (acceptedDriverId boş).")),
+                              const SnackBar(
+                                  content: Text(
+                                      "Şoför bilgisi bulunamadı (acceptedDriverId boş).")),
                             );
                             return;
                           }
@@ -247,14 +266,19 @@ class _LoadOffersCard extends StatelessWidget {
                             nameHint: "Şoför",
                           );
 
-                          await FirebaseFirestore.instance.collection("loads").doc(load.id).update({
+                          await FirebaseFirestore.instance
+                              .collection("loads")
+                              .doc(load.id)
+                              .update({
                             "status": "done",
                             "doneAt": FieldValue.serverTimestamp(),
                           });
 
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Teslim onaylandı ✅ İş tamamlandı.")),
+                            const SnackBar(
+                                content:
+                                    Text("Teslim onaylandı ✅ İş tamamlandı.")),
                           );
                         } catch (e) {
                           if (!context.mounted) return;
@@ -282,7 +306,8 @@ class _LoadOffersCard extends StatelessWidget {
                   );
                 }
 
-                final offers = snap.data!.docs.map((d) => Offer.fromDoc(d)).toList();
+                final offers =
+                    snap.data!.docs.map((d) => Offer.fromDoc(d)).toList();
                 if (offers.isEmpty) return const Text("Henüz teklif yok.");
 
                 return Column(
@@ -325,15 +350,17 @@ class _LoadOffersCard extends StatelessWidget {
                           return "Karşı teklif";
                         default:
                           return "Beklemede";
-
                       }
                     }
 
                     final isFixed = load.priceType == "fixed";
 
                     // ✅ sabitte "Karşı Teklif" kapalı (istersen kaldırma, böyle daha doğru)
-                    final canAct = (!isFixed && !acceptedAlready && (o.status == "sent" || o.status == "countered"));
-                    final canAccept = (!acceptedAlready && (o.status == "sent" || o.status == "countered"));
+                    final canAct = (!isFixed &&
+                        !acceptedAlready &&
+                        (o.status == "sent" || o.status == "countered"));
+                    final canAccept = (!acceptedAlready &&
+                        (o.status == "sent" || o.status == "countered"));
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
@@ -353,16 +380,21 @@ class _LoadOffersCard extends StatelessWidget {
                                   CircleAvatar(
                                     radius: 18,
                                     backgroundColor: cs.surfaceContainerHighest,
-                                    child: Icon(Icons.person_outline, color: cs.onSurfaceVariant),
+                                    child: Icon(Icons.person_outline,
+                                        color: cs.onSurfaceVariant),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          o.driverName.isEmpty ? "Şoför" : o.driverName,
-                                          style: const TextStyle(fontWeight: FontWeight.w900),
+                                          o.driverName.isEmpty
+                                              ? "Şoför"
+                                              : o.driverName,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w900),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -378,16 +410,21 @@ class _LoadOffersCard extends StatelessWidget {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: statusColor(o.status)),
-                                      color: statusColor(o.status).withOpacity(0.12),
+                                      border: Border.all(
+                                          color: statusColor(o.status)),
+                                      color: statusColor(o.status)
+                                          .withOpacity(0.12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(statusIcon(o.status), size: 16, color: statusColor(o.status)),
+                                        Icon(statusIcon(o.status),
+                                            size: 16,
+                                            color: statusColor(o.status)),
                                         const SizedBox(width: 6),
                                         Text(
                                           statusLabel(o.status),
@@ -407,27 +444,35 @@ class _LoadOffersCard extends StatelessWidget {
                                     tooltip: "İşlemler",
                                     onSelected: (v) async {
                                       if (v == "reject") {
-                                        await FirebaseFirestore.instance.collection("offers").doc(o.id).update({
+                                        await FirebaseFirestore.instance
+                                            .collection("offers")
+                                            .doc(o.id)
+                                            .update({
                                           "status": "rejected",
-                                          "rejectedAt": FieldValue.serverTimestamp(),
+                                          "rejectedAt":
+                                              FieldValue.serverTimestamp(),
                                         });
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text("Teklif reddedildi ✅")),
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content:
+                                                  Text("Teklif reddedildi ✅")),
                                         );
                                       }
                                     },
                                     itemBuilder: (_) => [
                                       PopupMenuItem(
                                         value: "reject",
-                                        enabled: (!acceptedAlready && (o.status == "sent" || o.status == "countered")),
+                                        enabled: (!acceptedAlready &&
+                                            (o.status == "sent" ||
+                                                o.status == "countered")),
                                         child: const Text("Reddet"),
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
-
                               if (o.note.trim().isNotEmpty) ...[
                                 const SizedBox(height: 10),
                                 Container(
@@ -436,17 +481,22 @@ class _LoadOffersCard extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
                                     color: cs.surfaceContainerHighest,
-                                    border: Border.all(color: cs.outlineVariant),
+                                    border:
+                                        Border.all(color: cs.outlineVariant),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.notes_outlined, size: 18, color: cs.onSurfaceVariant),
+                                      Icon(Icons.notes_outlined,
+                                          size: 18, color: cs.onSurfaceVariant),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           o.note.trim(),
-                                          style: Theme.of(context).textTheme.bodySmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                           maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -455,7 +505,6 @@ class _LoadOffersCard extends StatelessWidget {
                                   ),
                                 ),
                               ],
-
                               if (o.counterPrice != null) ...[
                                 const SizedBox(height: 10),
                                 Container(
@@ -467,22 +516,32 @@ class _LoadOffersCard extends StatelessWidget {
                                     color: Colors.orange.withOpacity(0.10),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: const [
-                                          Icon(Icons.local_offer_outlined, size: 18),
+                                      const Row(
+                                        children: [
+                                          Icon(Icons.local_offer_outlined,
+                                              size: 18),
                                           SizedBox(width: 6),
-                                          Text("Karşı teklif", style: TextStyle(fontWeight: FontWeight.w900)),
+                                          Text("Karşı teklif",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w900)),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-                                      Text("Fiyat: ${o.counterPrice} ₺", style: const TextStyle(fontWeight: FontWeight.w800)),
-                                      if ((o.counterNote ?? "").trim().isNotEmpty) ...[
+                                      Text("Fiyat: ${o.counterPrice} ₺",
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w800)),
+                                      if ((o.counterNote ?? "")
+                                          .trim()
+                                          .isNotEmpty) ...[
                                         const SizedBox(height: 4),
                                         Text(
                                           "Not: ${o.counterNote}",
-                                          style: Theme.of(context).textTheme.bodySmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -491,9 +550,7 @@ class _LoadOffersCard extends StatelessWidget {
                                   ),
                                 ),
                               ],
-
                               const SizedBox(height: 12),
-
                               Column(
                                 children: [
                                   // ÜST: KARŞI TEKLİF
@@ -503,29 +560,37 @@ class _LoadOffersCard extends StatelessWidget {
                                     child: OutlinedButton.icon(
                                       onPressed: canAct
                                           ? () async {
-                                        final res = await _counterDialog(
-                                          context,
-                                          initial: o.counterPrice?.toString() ?? "",
-                                        );
-                                        if (res == null) return;
+                                              final res = await _counterDialog(
+                                                context,
+                                                initial: o.counterPrice
+                                                        ?.toString() ??
+                                                    "",
+                                              );
+                                              if (res == null) return;
 
-                                        try {
-                                          await _sendCounterOffer(
-                                            offerId: o.id,
-                                            counterPrice: res.$1,
-                                            counterNote: res.$2,
-                                          );
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text("Karşı teklif gönderildi ✅")),
-                                          );
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Hata: $e")),
-                                          );
-                                        }
-                                      }
+                                              try {
+                                                await _sendCounterOffer(
+                                                  offerId: o.id,
+                                                  counterPrice: res.$1,
+                                                  counterNote: res.$2,
+                                                );
+                                                if (!context.mounted) return;
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                      content: Text(
+                                                          "Karşı teklif gönderildi ✅")),
+                                                );
+                                              } catch (e) {
+                                                if (!context.mounted) return;
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content:
+                                                          Text("Hata: $e")),
+                                                );
+                                              }
+                                            }
                                           : null,
                                       icon: const Icon(Icons.edit_outlined),
                                       label: const Text("Karşı Teklif Gönder"),
@@ -541,38 +606,63 @@ class _LoadOffersCard extends StatelessWidget {
                                         child: SizedBox(
                                           height: 44,
                                           child: OutlinedButton.icon(
-                                            onPressed: (!acceptedAlready && (o.status == "sent" || o.status == "countered"))
+                                            onPressed: (!acceptedAlready &&
+                                                    (o.status == "sent" ||
+                                                        o.status ==
+                                                            "countered"))
                                                 ? () async {
-                                              final ok = await showDialog<bool>(
-                                                context: context,
-                                                builder: (_) => AlertDialog(
-                                                  title: const Text("Teklif reddedilsin mi?"),
-                                                  content: const Text("Bu teklifi reddedersen şoför tekrar teklif verebilir."),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.pop(context, false),
-                                                      child: const Text("Vazgeç"),
-                                                    ),
-                                                    FilledButton(
-                                                      onPressed: () => Navigator.pop(context, true),
-                                                      child: const Text("Reddet"),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
+                                                    final ok =
+                                                        await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (_) =>
+                                                          AlertDialog(
+                                                        title: const Text(
+                                                            "Teklif reddedilsin mi?"),
+                                                        content: const Text(
+                                                            "Bu teklifi reddedersen şoför tekrar teklif verebilir."),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                    context,
+                                                                    false),
+                                                            child: const Text(
+                                                                "Vazgeç"),
+                                                          ),
+                                                          FilledButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                    context,
+                                                                    true),
+                                                            child: const Text(
+                                                                "Reddet"),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
 
-                                              if (ok != true) return;
+                                                    if (ok != true) return;
 
-                                              await FirebaseFirestore.instance.collection("offers").doc(o.id).update({
-                                                "status": "rejected",
-                                                "rejectedAt": FieldValue.serverTimestamp(),
-                                              });
+                                                    await FirebaseFirestore
+                                                        .instance
+                                                        .collection("offers")
+                                                        .doc(o.id)
+                                                        .update({
+                                                      "status": "rejected",
+                                                      "rejectedAt": FieldValue
+                                                          .serverTimestamp(),
+                                                    });
 
-                                              if (!context.mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Teklif reddedildi ✅")),
-                                              );
-                                            }
+                                                    if (!context.mounted)
+                                                      return;
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                          content: Text(
+                                                              "Teklif reddedildi ✅")),
+                                                    );
+                                                  }
                                                 : null,
                                             icon: const Icon(Icons.close),
                                             label: const Text("Reddet"),
@@ -586,17 +676,22 @@ class _LoadOffersCard extends StatelessWidget {
                                           child: FilledButton.icon(
                                             onPressed: canAccept
                                                 ? () async {
-                                              await _acceptOffer(
-                                                loadId: load.id,
-                                                offerId: o.id,
-                                                driverId: o.driverId,
-                                              );
+                                                    await _acceptOffer(
+                                                      loadId: load.id,
+                                                      offerId: o.id,
+                                                      driverId: o.driverId,
+                                                    );
 
-                                              if (!context.mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Teklif kabul edildi ✅")),
-                                              );
-                                            }
+                                                    if (!context.mounted)
+                                                      return;
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                          content: Text(
+                                                              "Teklif kabul edildi ✅")),
+                                                    );
+                                                  }
                                                 : null,
                                             icon: const Icon(Icons.check),
                                             label: const Text("Kabul Et"),
@@ -622,7 +717,8 @@ class _LoadOffersCard extends StatelessWidget {
     );
   }
 
-  Future<(int, String)?> _counterDialog(BuildContext context, {String initial = ""}) async {
+  Future<(int, String)?> _counterDialog(BuildContext context,
+      {String initial = ""}) async {
     final priceCtrl = TextEditingController(text: initial);
     final noteCtrl = TextEditingController();
 
@@ -646,8 +742,12 @@ class _LoadOffersCard extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Gönder")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Vazgeç")),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Gönder")),
         ],
       ),
     );
@@ -683,7 +783,8 @@ class _LoadOffersCard extends StatelessWidget {
     final loadRef = db.collection("loads").doc(loadId);
     final offerRef = db.collection("offers").doc(offerId);
 
-    final othersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
+    final othersSnap =
+        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
 
     final batch = db.batch();
 
@@ -705,7 +806,8 @@ class _LoadOffersCard extends StatelessWidget {
 
   Future<void> _deleteLoadWithOffers({required String loadId}) async {
     final db = FirebaseFirestore.instance;
-    final offersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
+    final offersSnap =
+        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
 
     final batch = db.batch();
     for (final d in offersSnap.docs) {
@@ -717,13 +819,13 @@ class _LoadOffersCard extends StatelessWidget {
   }
 
   Future<void> _rateUserDialog(
-      BuildContext context, {
-        required String toUserId,
-        required String toRole,
-        required String title,
-        required String loadId,
-        String nameHint = "",
-      }) async {
+    BuildContext context, {
+    required String toUserId,
+    required String toRole,
+    required String title,
+    required String loadId,
+    String nameHint = "",
+  }) async {
     int stars = 5;
     final noteCtrl = TextEditingController();
 
@@ -738,7 +840,8 @@ class _LoadOffersCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (nameHint.trim().isNotEmpty)
-                    Text(nameHint, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(nameHint,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -753,7 +856,8 @@ class _LoadOffersCard extends StatelessWidget {
                   ),
                   TextField(
                     controller: noteCtrl,
-                    decoration: const InputDecoration(labelText: "Not (opsiyonel)"),
+                    decoration:
+                        const InputDecoration(labelText: "Not (opsiyonel)"),
                   ),
                 ],
               ),
@@ -796,8 +900,11 @@ class _LoadOffersCard extends StatelessWidget {
       final snap = await tx.get(userRef);
       final data = snap.data() ?? {};
 
-      final prevAvg = (data["ratingAvg"] is num) ? (data["ratingAvg"] as num).toDouble() : 0.0;
-      final prevCount = (data["ratingCount"] is int) ? data["ratingCount"] as int : 0;
+      final prevAvg = (data["ratingAvg"] is num)
+          ? (data["ratingAvg"] as num).toDouble()
+          : 0.0;
+      final prevCount =
+          (data["ratingCount"] is int) ? data["ratingCount"] as int : 0;
 
       final newCount = prevCount + 1;
       final newAvg = ((prevAvg * prevCount) + stars) / newCount;

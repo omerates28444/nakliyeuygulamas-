@@ -4,23 +4,14 @@ import '../services/auth_service.dart';
 import 'app_shell.dart';
 import 'role_select_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _LoginContent();
-  }
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginContent extends StatefulWidget {
-  const _LoginContent();
-
-  @override
-  State<_LoginContent> createState() => _LoginContentState();
-}
-
-class _LoginContentState extends State<_LoginContent> {
+class _LoginScreenState extends State<LoginScreen> {
   final auth = AuthService();
 
   final emailCtrl = TextEditingController();
@@ -53,8 +44,6 @@ class _LoginContentState extends State<_LoginContent> {
   }
 
   bool get isDriver => appState.role == "driver";
-  bool get isAdmin => appState.role == "admin";
-  bool get isEn => appState.language == "en";
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -65,7 +54,7 @@ class _LoginContentState extends State<_LoginContent> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const AppShell()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -73,13 +62,11 @@ class _LoginContentState extends State<_LoginContent> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
-  // ✅ Admin girişi için "admin" kelimesine izin veriliyor
   bool _isValidEmail(String email) {
-    if (email == "admin") return true; 
     return RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email);
   }
 
@@ -92,27 +79,22 @@ class _LoginContentState extends State<_LoginContent> {
       final email = emailCtrl.text.trim();
       final pass = passCtrl.text.trim();
 
-      // ✅ SAHTE ADMIN GİRİŞİ (Firebase'siz test için geri eklendi)
-      if (isAdmin && email == "admin" && pass == "admin") {
-        appState.login(name: isEn ? "Administrator" : "Yönetici", admin: true);
-        _snack(isEn ? "Admin login successful ✅" : "Yönetici girişi başarılı ✅");
-        if (!mounted) return;
-        _goToApp();
-        return;
-      }
-
       if (appState.role.isEmpty) {
-        _snack(isEn ? "Please select a role first." : "Önce rol seçmelisin.");
+        _snack("Önce rol seçmelisin.");
         _goBackToRoleSelect();
         return;
       }
 
       if (email.isEmpty || pass.isEmpty) {
-        _snack(isEn ? "Enter email and password!" : "Email ve şifre gir!");
+        _snack("Email ve şifre gir!");
         return;
       }
       if (!_isValidEmail(email)) {
-        _snack(isEn ? "Invalid email format." : "Email formatı hatalı.");
+        _snack("Email formatı hatalı.");
+        return;
+      }
+      if (pass.length < 6) {
+        _snack("Şifre en az 6 karakter olmalı.");
         return;
       }
 
@@ -123,23 +105,23 @@ class _LoginContentState extends State<_LoginContent> {
         final pass2 = pass2Ctrl.text.trim();
 
         if (name.isEmpty) {
-          _snack(isEn ? "Enter Full Name!" : "Ad Soyad gir!");
+          _snack("Ad Soyad gir!");
           return;
         }
         if (phone.length < 10) {
-          _snack(isEn ? "Phone must be at least 10 digits." : "Telefon numarası en az 10 hane olmalı.");
+          _snack("Telefon numarası en az 10 hane olmalı.");
           return;
         }
         if (city.isEmpty) {
-          _snack(isEn ? "Enter City!" : "Şehir gir!");
+          _snack("Şehir gir!");
           return;
         }
         if (pass2 != pass) {
-          _snack(isEn ? "Passwords do not match." : "Şifreler eşleşmiyor.");
+          _snack("Şifreler eşleşmiyor.");
           return;
         }
         if (!acceptTerms) {
-          _snack(isEn ? "You must accept terms & conditions." : "KVKK / kullanım şartlarını kabul etmelisin.");
+          _snack("KVKK / kullanım şartlarını kabul etmelisin.");
           return;
         }
 
@@ -147,15 +129,21 @@ class _LoginContentState extends State<_LoginContent> {
         if (isDriver) {
           final plate = plateCtrl.text.trim();
           final cap = int.tryParse(capacityCtrl.text.trim());
+
           if (plate.isEmpty) {
-            _snack(isEn ? "Enter Plate!" : "Plaka gir!");
+            _snack("Plaka gir!");
             return;
           }
           if (cap == null || cap <= 0) {
-            _snack(isEn ? "Capacity must be a number." : "Kapasite (kg) sayı olmalı.");
+            _snack("Kapasite (kg) sayı olmalı.");
             return;
           }
-          driverInfo = {"vehicleType": vehicleType, "plate": plate, "capacityKg": cap};
+
+          driverInfo = {
+            "vehicleType": vehicleType,
+            "plate": plate,
+            "capacityKg": cap
+          };
         }
 
         await auth.register(
@@ -169,7 +157,7 @@ class _LoginContentState extends State<_LoginContent> {
         );
 
         appState.login(name: name);
-        _snack(isEn ? "Registration successful ✅" : "Kayıt başarılı ✅");
+        _snack("Kayıt başarılı ✅");
         if (!mounted) return;
         _goToApp();
       } else {
@@ -177,25 +165,22 @@ class _LoginContentState extends State<_LoginContent> {
         final profile = await auth.login(email: email, password: pass);
 
         final profileRole = (profile['role'] ?? '').toString();
-        final profileName = (profile['name'] ?? 'User').toString();
+        final profileName = (profile['name'] ?? 'Kullanıcı').toString();
 
-        if (profileRole == "admin") {
-          appState.login(name: profileName, admin: true);
-          _snack(isEn ? "Login successful ✅" : "Giriş başarılı ✅");
-          if (!mounted) return;
-          _goToApp();
+        if (profileRole != "driver" && profileRole != "shipper") {
+          await auth.logout();
+          _snack("Hesap rolü bulunamadı.");
           return;
         }
 
         if (profileRole != selectedRole) {
           await auth.logout();
           appState.logout();
-          final roleText = isEn 
-              ? (profileRole == "driver" ? "Carrier" : "Shipper")
-              : (profileRole == "driver" ? "Şoför" : "Yük Sahibi");
-          _snack(isEn 
-              ? "This email belongs to a '$roleText' account. Select the correct role." 
-              : "Bu email '$roleText' hesabına ait. Doğru rolü seçip giriş yap.");
+
+          final roleText = profileRole == "driver" ? "Şoför" : "Yük Sahibi";
+          _snack(
+              "Bu email '$roleText' hesabına ait. Doğru rolü seçip giriş yap.");
+
           if (!mounted) return;
           _goBackToRoleSelect();
           return;
@@ -203,12 +188,13 @@ class _LoginContentState extends State<_LoginContent> {
 
         appState.setRole(profileRole);
         appState.login(name: profileName);
-        _snack(isEn ? "Login successful ✅" : "Giriş başarılı ✅");
+
+        _snack("Giriş başarılı ✅");
         if (!mounted) return;
         _goToApp();
       }
     } catch (e) {
-      _snack("${isEn ? 'Error' : 'Hata'}: $e");
+      _snack("Hata: $e");
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -217,13 +203,7 @@ class _LoginContentState extends State<_LoginContent> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    
-    String roleLabel = "";
-    if (isAdmin) roleLabel = isEn ? "Administrator" : "Yönetici";
-    else if (isDriver) roleLabel = isEn ? "Carrier" : "Şoför";
-    else roleLabel = isEn ? "Shipper" : "Yük Sahibi";
-
-    final titleText = "$roleLabel • ${isRegister ? (isEn ? 'Sign Up' : 'Kayıt Ol') : (isEn ? 'Login' : 'Giriş Yap')}";
+    final roleLabel = isDriver ? "Şoför" : "Yük Sahibi";
 
     return PopScope(
       canPop: false,
@@ -234,7 +214,7 @@ class _LoginContentState extends State<_LoginContent> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(titleText),
+          title: Text("$roleLabel • ${isRegister ? 'Kayıt Ol' : 'Giriş Yap'}"),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: loading ? null : _goBackToRoleSelect,
@@ -244,27 +224,29 @@ class _LoginContentState extends State<_LoginContent> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
             children: [
-              if (isRegister && !isAdmin) ...[
+              if (isRegister) ...[
                 _SectionCard(
-                  title: isEn ? "Profile Information" : "Profil Bilgileri",
+                  title: "Profil Bilgileri",
                   child: Column(
                     children: [
                       TextField(
                         controller: nameCtrl,
-                        decoration: InputDecoration(labelText: isEn ? "Full Name" : "Ad Soyad"),
+                        decoration:
+                            const InputDecoration(labelText: "Ad Soyad"),
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: phoneCtrl,
-                        decoration: InputDecoration(labelText: isEn ? "Phone (05xx...)" : "Telefon (05xx...)"),
+                        decoration: const InputDecoration(
+                            labelText: "Telefon (05xx...)"),
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: cityCtrl,
-                        decoration: InputDecoration(labelText: isEn ? "City" : "Şehir"),
+                        decoration: const InputDecoration(labelText: "Şehir"),
                         textInputAction: TextInputAction.next,
                       ),
                     ],
@@ -273,31 +255,39 @@ class _LoginContentState extends State<_LoginContent> {
                 const SizedBox(height: 12),
                 if (isDriver) ...[
                   _SectionCard(
-                    title: isEn ? "Vehicle Information" : "Araç Bilgileri",
-                    subtitle: isEn ? "Required for carrier registration." : "Sadece şoför kayıt ekranında istenir.",
+                    title: "Araç Bilgileri",
+                    subtitle: "Sadece şoför kayıt ekranında istenir.",
                     child: Column(
                       children: [
                         DropdownButtonFormField<String>(
-                          value: vehicleType,
-                          decoration: InputDecoration(labelText: isEn ? "Vehicle Type" : "Araç Tipi"),
+                          initialValue: vehicleType,
+                          decoration:
+                              const InputDecoration(labelText: "Araç Tipi"),
                           items: const [
-                            DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
-                            DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
+                            DropdownMenuItem(
+                                value: "Kamyonet", child: Text("Kamyonet")),
+                            DropdownMenuItem(
+                                value: "Kamyon", child: Text("Kamyon")),
                             DropdownMenuItem(value: "Tır", child: Text("Tır")),
-                            DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
+                            DropdownMenuItem(
+                                value: "Frigo", child: Text("Frigo")),
                           ],
-                          onChanged: loading ? null : (v) => setState(() => vehicleType = v ?? "Kamyonet"),
+                          onChanged: loading
+                              ? null
+                              : (v) =>
+                                  setState(() => vehicleType = v ?? "Kamyonet"),
                         ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: plateCtrl,
-                          decoration: InputDecoration(labelText: isEn ? "Plate" : "Plaka"),
+                          decoration: const InputDecoration(labelText: "Plaka"),
                           textInputAction: TextInputAction.next,
                         ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: capacityCtrl,
-                          decoration: InputDecoration(labelText: isEn ? "Capacity (kg)" : "Kapasite (kg)"),
+                          decoration:
+                              const InputDecoration(labelText: "Kapasite (kg)"),
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.next,
                         ),
@@ -307,9 +297,8 @@ class _LoginContentState extends State<_LoginContent> {
                   const SizedBox(height: 12),
                 ],
               ],
-
               _SectionCard(
-                title: isEn ? "Account Information" : "Hesap Bilgileri",
+                title: "Hesap Bilgileri",
                 child: Column(
                   children: [
                     TextField(
@@ -322,16 +311,20 @@ class _LoginContentState extends State<_LoginContent> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: passCtrl,
-                      decoration: InputDecoration(labelText: isEn ? "Password" : "Şifre"),
+                      decoration:
+                          const InputDecoration(labelText: "Şifre (min 6)"),
                       obscureText: true,
                       autofillHints: const [AutofillHints.password],
-                      textInputAction: (isRegister && !isAdmin) ? TextInputAction.next : TextInputAction.done,
+                      textInputAction: isRegister
+                          ? TextInputAction.next
+                          : TextInputAction.done,
                     ),
-                    if (isRegister && !isAdmin) ...[
+                    if (isRegister) ...[
                       const SizedBox(height: 10),
                       TextField(
                         controller: pass2Ctrl,
-                        decoration: InputDecoration(labelText: isEn ? "Confirm Password" : "Şifre Tekrar"),
+                        decoration:
+                            const InputDecoration(labelText: "Şifre Tekrar"),
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                       ),
@@ -339,10 +332,8 @@ class _LoginContentState extends State<_LoginContent> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              if (isRegister && !isAdmin)
+              if (isRegister)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -351,15 +342,16 @@ class _LoginContentState extends State<_LoginContent> {
                   ),
                   child: CheckboxListTile(
                     value: acceptTerms,
-                    onChanged: loading ? null : (v) => setState(() => acceptTerms = v ?? false),
-                    title: Text(isEn ? "I accept Terms & Conditions." : "KVKK / Kullanım şartlarını kabul ediyorum."),
+                    onChanged: loading
+                        ? null
+                        : (v) => setState(() => acceptTerms = v ?? false),
+                    title: const Text(
+                        "KVKK / Kullanım şartlarını kabul ediyorum."),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-
               const SizedBox(height: 12),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -376,21 +368,20 @@ class _LoginContentState extends State<_LoginContent> {
                         ),
                         const SizedBox(width: 10),
                       ],
-                      Text(isRegister ? (isEn ? "Sign Up" : "Kayıt Ol") : (isEn ? "Login" : "Giriş Yap")),
+                      Text(isRegister ? "Kayıt Ol" : "Giriş Yap"),
                     ],
                   ),
                 ),
               ),
-
-              if (!isAdmin) ...[
-                const SizedBox(height: 6),
-                TextButton(
-                  onPressed: loading ? null : () => setState(() => isRegister = !isRegister),
-                  child: Text(isRegister 
-                      ? (isEn ? "Already have an account? Login" : "Zaten hesabım var (Giriş)") 
-                      : (isEn ? "Need an account? Sign Up" : "Hesap oluştur (Kayıt)")),
-                ),
-              ],
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: loading
+                    ? null
+                    : () => setState(() => isRegister = !isRegister),
+                child: Text(isRegister
+                    ? "Zaten hesabım var (Giriş)"
+                    : "Hesap oluştur (Kayıt)"),
+              ),
             ],
           ),
         ),
@@ -420,7 +411,9 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(subtitle!, style: TextStyle(color: cs.onSurfaceVariant)),

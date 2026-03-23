@@ -11,6 +11,7 @@ import '../app_state.dart';
 import '../models/load.dart';
 import '../models/offer.dart';
 import 'offers_inbox_screen.dart';
+import '../screens/active_jobs_panel.dart'; // ActiveJobsBottomBar burada
 import '../services/load_service.dart';
 import 'profile_screen.dart';
 
@@ -34,14 +35,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     _initLocation();
   }
 
-  bool get _isCurrentlyDriver {
-    if (appState.isAdmin) return appState.adminViewRole == "driver";
-    return appState.role == "driver";
-  }
-
+  /// Panel/iş listesinden haritayı o işe odakla
   void focusJobById(String jobId) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection("loads").doc(jobId).get();
+      final doc =
+          await FirebaseFirestore.instance.collection("loads").doc(jobId).get();
       if (!doc.exists) return;
       final l = Load.fromDoc(doc);
       if (l.fromLat == null || l.fromLng == null) return;
@@ -64,7 +62,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
         _snack("Konum izni verilmedi.");
         return;
       }
@@ -72,7 +71,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       final last = await Geolocator.getLastKnownPosition();
       if (last != null && mounted) setState(() => _pos = last);
 
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
       if (mounted) setState(() => _pos = pos);
     } finally {
       if (mounted) setState(() => _locLoading = false);
@@ -95,6 +95,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   List<Marker> _buildMarkers(List<Load> loads) {
     final markers = <Marker>[];
 
+    // kullanıcı konumu
     if (_pos != null) {
       markers.add(
         Marker(
@@ -110,7 +111,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
               child: Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.blue, shape: BoxShape.circle),
               ),
             ),
           ),
@@ -118,6 +120,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       );
     }
 
+    // ✅ sadece OPEN ilanlar marker
     for (final l in loads) {
       if (l.fromLat == null || l.fromLng == null) continue;
       if (l.status != "open") continue;
@@ -139,6 +142,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     return markers;
   }
 
+  // ✅ driver karşı teklifi kabul
   Future<void> _driverAcceptCounter({
     required Load load,
     required Offer myOffer,
@@ -156,6 +160,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       final status = (data["status"] ?? "open").toString();
       final acceptedOfferId = data["acceptedOfferId"];
 
+      // ✅ Başkası aldıysa / ilan kapalıysa engelle
       if (status != "open" && status != "matched") {
         throw Exception("Bu ilan artık uygun değil.");
       }
@@ -163,8 +168,10 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
         throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
       }
 
+      // ✅ benim teklifimi accepted
       tx.update(offerRef, {"status": "accepted"});
 
+      // ✅ load'u matched yap
       tx.update(loadRef, {
         "status": "matched",
         "acceptedOfferId": myOffer.id,
@@ -172,7 +179,9 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
       });
     });
 
-    final others = await db.collection("offers").where("loadId", isEqualTo: load.id).get();
+    // ✅ transaction sonrası diğer teklifleri reddet
+    final others =
+        await db.collection("offers").where("loadId", isEqualTo: load.id).get();
     final batch = db.batch();
     for (final d in others.docs) {
       if (d.id == myOffer.id) continue;
@@ -181,8 +190,12 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     await batch.commit();
   }
 
+  // ✅ driver karşı teklifi reddedince: teklif silinsin
   Future<void> _driverRejectCounter({required Offer myOffer}) async {
-    await FirebaseFirestore.instance.collection("offers").doc(myOffer.id).update({
+    await FirebaseFirestore.instance
+        .collection("offers")
+        .doc(myOffer.id)
+        .update({
       "status": "driver_rejected_counter",
       "driverRejectedAt": FieldValue.serverTimestamp(),
     });
@@ -196,7 +209,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   Future<void> _deleteLoadWithOffersById(String loadId) async {
     final db = FirebaseFirestore.instance;
 
-    final offersSnap = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
+    final offersSnap =
+        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
     final batch = db.batch();
 
     for (final d in offersSnap.docs) {
@@ -208,12 +222,14 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   Future<void> _cleanupExpiredLoads(List<Load> loads) async {
-    if (appState.role != "shipper" && !appState.isAdmin) return;
+    if (appState.role != "shipper") return;
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null && !appState.isAdmin) return;
+    if (uid == null) return;
 
-    final myExpired = loads.where((l) => (l.shipperId == uid || appState.isAdmin) && _isExpiredForDelete(l)).toList();
+    final myExpired = loads
+        .where((l) => l.shipperId == uid && _isExpiredForDelete(l))
+        .toList();
     if (myExpired.isEmpty) return;
 
     for (final l in myExpired) {
@@ -223,12 +239,14 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     }
   }
 
-  Widget _pill({required IconData icon, required String text, Color? color}) {
+  // ---------- UI helpers ----------
+
+  Widget _pill({required IconData icon, required String text}) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withOpacity(0.92),
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant),
         boxShadow: [
@@ -258,7 +276,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 12),
@@ -273,7 +292,9 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isOpen ? Colors.green.withOpacity(0.15) : cs.surfaceContainerHighest,
+        color: isOpen
+            ? Colors.green.withOpacity(0.15)
+            : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: isOpen ? Colors.green : cs.outlineVariant),
       ),
@@ -291,7 +312,7 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
   }
 
   void _openJobSheet(Load l, LatLng dest) {
-    final isDriver = _isCurrentlyDriver;
+    final isDriver = appState.role == "driver";
     final priceCtrl = TextEditingController(text: "3000");
     final noteCtrl = TextEditingController();
 
@@ -323,7 +344,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                       Expanded(
                         child: Text(
                           "${l.fromCity} → ${l.toCity}",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w900),
                         ),
                       ),
                       _statusChip(
@@ -334,12 +356,12 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                      side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -347,19 +369,24 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                         children: [
                           _infoRow("Ağırlık", "${l.weightKg} kg"),
                           _infoRow("Ücret", priceText),
-                          _infoRow("Teslim Tarihi", DateFormat("dd.MM.yyyy").format(l.pickupDate)),
+                          _infoRow("Teslim Tarihi",
+                              DateFormat("dd.MM.yyyy").format(l.pickupDate)),
                           if (!isDriver)
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: Row(
                                 children: [
                                   Icon(Icons.info_outline,
-                                      size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      size: 18,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       "Bu pencere şoför teklif vermek içindir. Teklif yönetimi panelde Yük Sahibi kısmında.",
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
                                     ),
                                   )
                                 ],
@@ -369,23 +396,23 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   if (isDriver) ...[
                     Builder(
                       builder: (context) {
-                        final uid = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
+                        final uid = FirebaseAuth.instance.currentUser?.uid;
 
-                        final Stream<QuerySnapshot<Map<String, dynamic>>> myOfferStream = (uid == null)
-                            ? const Stream.empty()
-                            : FirebaseFirestore.instance
-                            .collection("offers")
-                            .where("loadId", isEqualTo: l.id)
-                            .where("driverId", isEqualTo: uid)
-                            .snapshots();
+                        final Stream<QuerySnapshot<Map<String, dynamic>>>
+                            myOfferStream = (uid == null)
+                                ? const Stream.empty()
+                                : FirebaseFirestore.instance
+                                    .collection("offers")
+                                    .where("loadId", isEqualTo: l.id)
+                                    .where("driverId", isEqualTo: uid)
+                                    .snapshots();
 
-                        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        return StreamBuilder<
+                            QuerySnapshot<Map<String, dynamic>>>(
                           stream: myOfferStream,
                           builder: (context, snap) {
                             if (snap.hasError) {
@@ -394,146 +421,223 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                             if (!snap.hasData) {
                               return const Padding(
                                 padding: EdgeInsets.all(8),
-                                child: Center(child: CircularProgressIndicator()),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
                               );
                             }
 
                             final docs = snap.data!.docs.toList();
+
+                            // ✅ createdAt'e göre (client-side) sırala: en yeni en üstte
                             docs.sort((a, b) {
-                              final ta = (a.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
-                              final tb = (b.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+                              final ta = (a.data()["createdAt"] as Timestamp?)
+                                      ?.millisecondsSinceEpoch ??
+                                  0;
+                              final tb = (b.data()["createdAt"] as Timestamp?)
+                                      ?.millisecondsSinceEpoch ??
+                                  0;
                               return tb.compareTo(ta);
                             });
 
-                            final myOffers = docs.map((d) => Offer.fromDoc(d)).toList();
-                            final Offer? lastOffer = myOffers.isNotEmpty ? myOffers.first : null;
+                            // ✅ Tüm teklif geçmişin (en yeni -> en eski)
+                            final myOffers =
+                                docs.map((d) => Offer.fromDoc(d)).toList();
 
-                            final bool isFixed = (l.priceType == "fixed" && l.fixedPrice != null);
+                            // ✅ En son teklifin
+                            final Offer? lastOffer =
+                                myOffers.isNotEmpty ? myOffers.first : null;
+
+                            // ✅ SABİT FİYAT mı?
+                            final bool isFixed = (l.priceType == "fixed" &&
+                                l.fixedPrice != null);
                             final int fixedPrice = l.fixedPrice ?? 0;
 
+                            // ------------------------------------------------------------
+                            // ✅ SABİT İLAN: TEKLİF FORMU GÖSTERME -> "ÜCRETİ KABUL ET"
+                            // ------------------------------------------------------------
                             if (isFixed) {
-                              final bool alreadyAcceptedByMe = lastOffer?.status == "accepted";
-                              final bool notOpen = l.status != "open";
+                              // Eğer daha önce kabul ettiyse / zaten matched ise
+                              final bool alreadyAcceptedByMe =
+                                  lastOffer?.status == "accepted";
+                              final bool notOpen = l.status !=
+                                  "open"; // marker zaten open gösteriyor ama garanti
 
                               return Card(
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                                  side: BorderSide(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant),
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Sabit Ücret", style: TextStyle(fontWeight: FontWeight.w900)),
+                                      const Text("Sabit Ücret",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w900)),
                                       const SizedBox(height: 8),
-                                      _statusChip("$fixedPrice ₺ (Sabit)", icon: Icons.payments_outlined, isOpen: true),
-
+                                      _statusChip("$fixedPrice ₺ (Sabit)",
+                                          icon: Icons.payments_outlined,
+                                          isOpen: true),
                                       if (myOffers.isNotEmpty) ...[
                                         const SizedBox(height: 10),
                                         const Divider(),
-                                        const Text("Geçmiş İşlemlerin", style: TextStyle(fontWeight: FontWeight.w900)),
+                                        const Text("Geçmiş İşlemlerin",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w900)),
                                         const SizedBox(height: 8),
                                         ...myOffers.take(3).map((o) {
                                           final st = o.status;
                                           final label = st == "rejected"
                                               ? "Reddedildi"
                                               : st == "accepted"
-                                              ? "Kabul edildi"
-                                              : st == "countered"
-                                              ? "Karşı teklif"
-                                              : "Beklemede";
+                                                  ? "Kabul edildi"
+                                                  : st == "countered"
+                                                      ? "Karşı teklif"
+                                                      : "Beklemede";
                                           return Padding(
-                                            padding: const EdgeInsets.only(bottom: 6),
+                                            padding: const EdgeInsets.only(
+                                                bottom: 6),
                                             child: Row(
                                               children: [
                                                 Expanded(
                                                   child: Text(
                                                     "${o.price} ₺ • $label",
-                                                    style: const TextStyle(fontWeight: FontWeight.w700),
+                                                    style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700),
                                                   ),
                                                 ),
-                                                if ((o.note ?? "").trim().isNotEmpty)
-                                                  Text((o.note ?? "").trim(), style: const TextStyle(fontSize: 12)),
+                                                if ((o.note ?? "")
+                                                    .trim()
+                                                    .isNotEmpty)
+                                                  Text((o.note ?? "").trim(),
+                                                      style: const TextStyle(
+                                                          fontSize: 12)),
                                               ],
                                             ),
                                           );
                                         }),
                                         const SizedBox(height: 6),
                                       ],
-
                                       const SizedBox(height: 8),
-
                                       SizedBox(
                                         width: double.infinity,
                                         height: 46,
                                         child: FilledButton.icon(
-                                          icon: const Icon(Icons.check_circle_outline),
+                                          icon: const Icon(
+                                              Icons.check_circle_outline),
                                           label: Text(
                                             notOpen
                                                 ? "İlan artık uygun değil"
-                                                : (alreadyAcceptedByMe ? "Zaten kabul ettin" : "Ücreti Kabul Et"),
+                                                : (alreadyAcceptedByMe
+                                                    ? "Zaten kabul ettin"
+                                                    : "Ücreti Kabul Et"),
                                           ),
-                                          onPressed: (uid == null || notOpen || alreadyAcceptedByMe)
+                                          onPressed: (uid == null ||
+                                                  notOpen ||
+                                                  alreadyAcceptedByMe)
                                               ? null
                                               : () async {
-                                            try {
-                                              final db = FirebaseFirestore.instance;
-                                              final newOfferRef = db.collection("offers").doc();
+                                                  try {
+                                                    final db = FirebaseFirestore
+                                                        .instance;
 
-                                              await db.runTransaction((tx) async {
-                                                final loadRef = db.collection("loads").doc(l.id);
-                                                final loadSnap = await tx.get(loadRef);
-                                                if (!loadSnap.exists) throw Exception("İlan bulunamadı");
+                                                    // ✅ Sabit ilanı kabul et: teklif oluştur + load'u matched yap (transaction)
+                                                    final newOfferRef = db
+                                                        .collection("offers")
+                                                        .doc();
 
-                                                final data = loadSnap.data() as Map<String, dynamic>;
-                                                final status = (data["status"] ?? "open").toString();
-                                                final acceptedOfferId = data["acceptedOfferId"];
+                                                    await db.runTransaction(
+                                                        (tx) async {
+                                                      final loadRef = db
+                                                          .collection("loads")
+                                                          .doc(l.id);
 
-                                                if (status != "open") {
-                                                  throw Exception("Bu ilan artık uygun değil.");
-                                                }
-                                                if (acceptedOfferId != null && acceptedOfferId.toString().isNotEmpty) {
-                                                  throw Exception("Bu ilan başka bir şoförle eşleşmiş.");
-                                                }
+                                                      final loadSnap =
+                                                          await tx.get(loadRef);
+                                                      if (!loadSnap.exists)
+                                                        throw Exception(
+                                                            "İlan bulunamadı");
 
-                                                tx.set(newOfferRef, {
-                                                  "loadId": l.id,
-                                                  "driverId": uid,
-                                                  "driverName": appState.displayName,
-                                                  "price": fixedPrice,
-                                                  "note": "",
-                                                  "status": "accepted",
-                                                  "createdAt": FieldValue.serverTimestamp(),
-                                                });
+                                                      final data =
+                                                          loadSnap.data()
+                                                              as Map<String,
+                                                                  dynamic>;
+                                                      final status =
+                                                          (data["status"] ??
+                                                                  "open")
+                                                              .toString();
+                                                      final acceptedOfferId =
+                                                          data[
+                                                              "acceptedOfferId"];
 
-                                                tx.update(loadRef, {
-                                                  "status": "matched",
-                                                  "acceptedOfferId": newOfferRef.id,
-                                                  "acceptedDriverId": uid,
-                                                });
-                                              });
+                                                      if (status != "open") {
+                                                        throw Exception(
+                                                            "Bu ilan artık uygun değil.");
+                                                      }
+                                                      if (acceptedOfferId !=
+                                                              null &&
+                                                          acceptedOfferId
+                                                              .toString()
+                                                              .isNotEmpty) {
+                                                        throw Exception(
+                                                            "Bu ilan başka bir şoförle eşleşmiş.");
+                                                      }
 
-                                              final others = await db
-                                                  .collection("offers")
-                                                  .where("loadId", isEqualTo: l.id)
-                                                  .get();
+                                                      tx.set(newOfferRef, {
+                                                        "loadId": l.id,
+                                                        "driverId": uid,
+                                                        "driverName": appState
+                                                            .displayName,
+                                                        "price": fixedPrice,
+                                                        "note": "",
+                                                        "status": "accepted",
+                                                        "createdAt": FieldValue
+                                                            .serverTimestamp(),
+                                                      });
 
-                                              final batch = db.batch();
-                                              for (final d in others.docs) {
-                                                if (d.id == newOfferRef.id) continue;
-                                                batch.update(d.reference, {"status": "rejected"});
-                                              }
-                                              await batch.commit();
+                                                      tx.update(loadRef, {
+                                                        "status": "matched",
+                                                        "acceptedOfferId":
+                                                            newOfferRef.id,
+                                                        "acceptedDriverId": uid,
+                                                      });
+                                                    });
 
-                                              if (!mounted) return;
-                                              Navigator.pop(context);
-                                              _snack("Sabit ücret kabul edildi ✅");
-                                            } catch (e) {
-                                              _snack("Kabul hatası: $e");
-                                            }
-                                          },
+                                                    // ✅ diğer teklifleri reddet
+                                                    final others = await db
+                                                        .collection("offers")
+                                                        .where("loadId",
+                                                            isEqualTo: l.id)
+                                                        .get();
+
+                                                    final batch = db.batch();
+                                                    for (final d
+                                                        in others.docs) {
+                                                      if (d.id ==
+                                                          newOfferRef.id)
+                                                        continue;
+                                                      batch.update(
+                                                          d.reference, {
+                                                        "status": "rejected"
+                                                      });
+                                                    }
+                                                    await batch.commit();
+
+                                                    if (!mounted) return;
+                                                    Navigator.pop(context);
+                                                    _snack(
+                                                        "Sabit ücret kabul edildi ✅");
+                                                  } catch (e) {
+                                                    _snack("Kabul hatası: $e");
+                                                  }
+                                                },
                                         ),
                                       ),
                                     ],
@@ -542,39 +646,52 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                               );
                             }
 
+                            // ------------------------------------------------------------
+                            // ✅ TEKLİF USULÜ: reddedildiyse tekrar teklif + geçmiş göster
+                            // ------------------------------------------------------------
                             final st = lastOffer?.status;
                             final bool canSendNewOffer = (lastOffer == null) ||
                                 (st == "rejected") ||
                                 (st == "driver_rejected_counter");
 
+                            // Reddedildiyse: geçmiş kalsın ama yeni teklif formu açılsın
                             if (canSendNewOffer) {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (myOffers.isNotEmpty) ...[
-                                    const Text("Geçmiş Tekliflerin", style: TextStyle(fontWeight: FontWeight.w900)),
+                                    const Text("Geçmiş Tekliflerin",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w900)),
                                     const SizedBox(height: 8),
                                     ...myOffers.take(3).map((o) {
                                       final st = o.status;
                                       final label = st == "rejected"
                                           ? "Reddedildi"
                                           : st == "accepted"
-                                          ? "Kabul edildi"
-                                          : st == "countered"
-                                          ? "Karşı teklif"
-                                          : "Beklemede";
+                                              ? "Kabul edildi"
+                                              : st == "countered"
+                                                  ? "Karşı teklif"
+                                                  : "Beklemede";
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 6),
+                                        padding:
+                                            const EdgeInsets.only(bottom: 6),
                                         child: Row(
                                           children: [
                                             Expanded(
                                               child: Text(
                                                 "${o.price} ₺ • $label",
-                                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w700),
                                               ),
                                             ),
-                                            if ((o.note ?? "").trim().isNotEmpty)
-                                              Text((o.note ?? "").trim(), style: const TextStyle(fontSize: 12)),
+                                            if ((o.note ?? "")
+                                                .trim()
+                                                .isNotEmpty)
+                                              Text((o.note ?? "").trim(),
+                                                  style: const TextStyle(
+                                                      fontSize: 12)),
                                           ],
                                         ),
                                       );
@@ -582,18 +699,21 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                     const Divider(),
                                     const SizedBox(height: 6),
                                   ],
-
-                                  const Text("Teklif Ver", style: TextStyle(fontWeight: FontWeight.w800)),
+                                  const Text("Teklif Ver",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w800)),
                                   const SizedBox(height: 8),
                                   TextField(
                                     controller: priceCtrl,
                                     keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(labelText: "Teklif (₺)"),
+                                    decoration: const InputDecoration(
+                                        labelText: "Teklif (₺)"),
                                   ),
                                   const SizedBox(height: 8),
                                   TextField(
                                     controller: noteCtrl,
-                                    decoration: const InputDecoration(labelText: "Not (opsiyonel)"),
+                                    decoration: const InputDecoration(
+                                        labelText: "Not (opsiyonel)"),
                                   ),
                                   const SizedBox(height: 12),
                                   FilledButton.icon(
@@ -601,26 +721,34 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                     label: const Text("Teklifi Gönder"),
                                     onPressed: () async {
                                       try {
-                                        final uid2 = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
+                                        final uid2 = FirebaseAuth
+                                            .instance.currentUser?.uid;
                                         if (uid2 == null) {
-                                          _snack("Oturum yok. Tekrar giriş yap.");
+                                          _snack(
+                                              "Oturum yok. Tekrar giriş yap.");
                                           return;
                                         }
 
-                                        final price = int.tryParse(priceCtrl.text.trim()) ?? 0;
+                                        final price = int.tryParse(
+                                                priceCtrl.text.trim()) ??
+                                            0;
                                         if (price <= 0) {
-                                          _snack("Teklif tutarı geçerli olmalı.");
+                                          _snack(
+                                              "Teklif tutarı geçerli olmalı.");
                                           return;
                                         }
 
-                                        await FirebaseFirestore.instance.collection("offers").add({
+                                        await FirebaseFirestore.instance
+                                            .collection("offers")
+                                            .add({
                                           "loadId": l.id,
                                           "driverId": uid2,
                                           "driverName": appState.displayName,
                                           "price": price,
                                           "note": noteCtrl.text.trim(),
                                           "status": "sent",
-                                          "createdAt": FieldValue.serverTimestamp(),
+                                          "createdAt":
+                                              FieldValue.serverTimestamp(),
                                         });
 
                                         if (!mounted) return;
@@ -635,9 +763,11 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                               );
                             }
 
-                            final myOffer = lastOffer!;
+                            // Son teklif rejected değilse: mevcut teklif kartı
+                            final myOffer = lastOffer;
                             final counter = myOffer.counterPrice;
-                            final counterNote = (myOffer.counterNote ?? "").trim();
+                            final counterNote =
+                                (myOffer.counterNote ?? "").trim();
 
                             String statusText;
                             IconData statusIcon;
@@ -658,12 +788,16 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                 statusText = "Beklemede";
                                 statusIcon = Icons.hourglass_bottom;
                             }
-                            final bool canRespondToCounter = myOffer.status == "countered";
+                            final bool canRespondToCounter =
+                                myOffer.status == "countered";
                             return Card(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                                side: BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
@@ -671,96 +805,119 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     if (myOffers.isNotEmpty) ...[
-                                      const Text("Geçmiş İşlemlerin", style: TextStyle(fontWeight: FontWeight.w900)),
+                                      const Text("Geçmiş Tekliflerin",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w900)),
                                       const SizedBox(height: 8),
                                       ...myOffers.take(3).map((o) {
                                         final st = o.status;
                                         final label = st == "rejected"
                                             ? "Reddedildi"
                                             : st == "accepted"
-                                            ? "Kabul edildi"
-                                            : st == "countered"
-                                            ? "Karşı teklif"
-                                            : "Beklemede";
+                                                ? "Kabul edildi"
+                                                : st == "countered"
+                                                    ? "Karşı teklif"
+                                                    : "Beklemede";
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 6),
+                                          padding:
+                                              const EdgeInsets.only(bottom: 6),
                                           child: Row(
                                             children: [
                                               Expanded(
                                                 child: Text(
                                                   "${o.price} ₺ • $label",
-                                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                                  style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700),
                                                 ),
                                               ),
-                                              if ((o.note ?? "").trim().isNotEmpty)
-                                                Text((o.note ?? "").trim(), style: const TextStyle(fontSize: 12)),
+                                              if ((o.note ?? "")
+                                                  .trim()
+                                                  .isNotEmpty)
+                                                Text((o.note ?? "").trim(),
+                                                    style: const TextStyle(
+                                                        fontSize: 12)),
                                             ],
                                           ),
                                         );
                                       }),
                                       const Divider(),
                                     ],
-
                                     Row(
                                       children: [
                                         Icon(statusIcon),
                                         const SizedBox(width: 8),
                                         Text(
                                           "Senin teklifin: ${myOffer.price} ₺",
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 16),
                                         ),
                                         const Spacer(),
                                         _statusChip(statusText),
                                       ],
                                     ),
-
                                     if (counter != null) ...[
                                       const SizedBox(height: 12),
                                       const Divider(),
                                       Text(
                                         "Yük sahibinin karşı teklifi",
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w900),
                                       ),
                                       const SizedBox(height: 6),
-                                      _statusChip("$counter ₺", icon: Icons.payments_outlined),
+                                      _statusChip("$counter ₺",
+                                          icon: Icons.payments_outlined),
                                       if (counterNote.isNotEmpty) ...[
                                         const SizedBox(height: 6),
-                                        Text("Not: $counterNote", style: Theme.of(context).textTheme.bodySmall),
+                                        Text("Not: $counterNote",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall),
                                       ],
                                       const SizedBox(height: 12),
                                       Row(
                                         children: [
                                           Expanded(
                                             child: FilledButton(
-                                            onPressed: canRespondToCounter
-                                            ? () async {
-                            try {
-                            await _driverAcceptCounter(load: l, myOffer: myOffer);
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                            _snack("Karşı teklif kabul edildi ✅");
-                            } catch (e) {
-                            _snack("Kabul hatası: $e");
-                            }
-                            }
-                                : null,
+                                              onPressed: canRespondToCounter
+                                                  ? () async {
+                                                      try {
+                                                        await _driverAcceptCounter(
+                                                            load: l,
+                                                            myOffer: myOffer);
+                                                        if (!mounted) return;
+                                                        Navigator.pop(context);
+                                                        _snack(
+                                                            "Karşı teklif kabul edildi ✅");
+                                                      } catch (e) {
+                                                        _snack(
+                                                            "Kabul hatası: $e");
+                                                      }
+                                                    }
+                                                  : null,
                                               child: const Text("Kabul Et"),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: OutlinedButton(
-                            onPressed: canRespondToCounter
-                            ? () async {
-                            try {
-                            await _driverRejectCounter(myOffer: myOffer);
-                            if (!mounted) return;
-                            _snack("Karşı teklif reddedildi");
-                            } catch (e) {
-                            _snack("Hata: $e");
-                            }
-                            }
-                                : null,
+                                              onPressed: canRespondToCounter
+                                                  ? () async {
+                                                      try {
+                                                        await _driverRejectCounter(
+                                                            myOffer: myOffer);
+                                                        if (!mounted) return;
+                                                        _snack(
+                                                            "Karşı teklif reddedildi");
+                                                      } catch (e) {
+                                                        _snack("Hata: $e");
+                                                      }
+                                                    }
+                                                  : null,
                                               child: const Text("Reddet"),
                                             ),
                                           ),
@@ -777,7 +934,6 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-
                   SizedBox(
                     width: double.infinity,
                     height: 46,
@@ -801,9 +957,9 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     final origin = _pos != null ? "${_pos!.latitude},${_pos!.longitude}" : "";
     final uri = Uri.parse(
       "https://www.google.com/maps/dir/?api=1"
-          "${origin.isNotEmpty ? "&origin=$origin" : ""}"
-          "&destination=${dest.latitude},${dest.longitude}"
-          "&travelmode=driving",
+      "${origin.isNotEmpty ? "&origin=$origin" : ""}"
+      "&destination=${dest.latitude},${dest.longitude}"
+      "&travelmode=driving",
     );
 
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -811,8 +967,9 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
     }
   }
 
+  // ✅ HARİTADAKİ HAREKETLİ PANEL
   Widget _buildDraggablePanel() {
-    final isDriver = _isCurrentlyDriver;
+    final isDriver = appState.role == "driver";
 
     return DraggableScrollableSheet(
       initialChildSize: 0.12,
@@ -835,7 +992,8 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                 topRight: Radius.circular(22),
               ),
               border: Border(
-                top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
             ),
             child: Column(
@@ -853,12 +1011,12 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
                 Expanded(
                   child: isDriver
                       ? _DriverActiveJobsSheet(
-                    scrollController: scrollController,
-                    onOpenOnMap: focusJobById,
-                  )
+                          scrollController: scrollController,
+                          onOpenOnMap: focusJobById,
+                        )
                       : _ShipperLoadsSheet(
-                    scrollController: scrollController,
-                  ),
+                          scrollController: scrollController,
+                        ),
                 ),
               ],
             ),
@@ -870,158 +1028,115 @@ class OsmMapHomeScreenState extends State<OsmMapHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final trCenter = LatLng(39.0, 35.0);
-    final loadsStream = FirebaseFirestore.instance.collection("loads").snapshots();
+    const trCenter = LatLng(39.0, 35.0);
+    final loadsStream =
+        FirebaseFirestore.instance.collection("loads").snapshots();
 
     return Scaffold(
-      body: ListenableBuilder( 
-        listenable: appState,
-        builder: (context, _) {
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: loadsStream,
-            builder: (context, snap) {
-              if (snap.hasError) {
-                // ✅ Hata detayını göster (Permission denied vb.)
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                        const SizedBox(height: 16),
-                        const Text(
-                          "Harita Veri Hatası",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          snap.error.toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        if (appState.isAdmin)
-                          const Text(
-                            "İpucu: Firebase Firestore kurallarında (Rules) okuma izni kapalı olabilir. Admin auth olmadan girdiğinde bu hatayı alabilir.",
-                            style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              if (!snap.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: loadsStream,
+        builder: (context, snap) {
+          if (snap.hasError) {
+            return Center(child: Text("Harita veri hatası: ${snap.error}"));
+          }
+          if (!snap.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              final allLoads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
-              final loads = allLoads.where((l) => !_isExpiredForDelete(l)).toList();
+          final allLoads = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
 
-              if (!_cleanupRan) {
-                _cleanupRan = true;
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _cleanupExpiredLoads(allLoads);
-                });
-              }
+          // ✅ Driver tarafında: teslim tarihinden 1 hafta geçen ilanları gösterme
+          final loads = allLoads.where((l) => !_isExpiredForDelete(l)).toList();
 
-              return Stack(
+          // ✅ Shipper uygulamaya girince kendi süresi geçen ilanlarını temizle
+          if (!_cleanupRan) {
+            _cleanupRan = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _cleanupExpiredLoads(allLoads);
+            });
+          }
+
+          return Stack(
+            children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: trCenter,
+                  initialZoom: 5.3,
+                  minZoom: 3,
+                  maxZoom: 19,
+                  interactionOptions:
+                      const InteractionOptions(flags: InteractiveFlag.all),
+                ),
                 children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: trCenter,
-                      initialZoom: 5.3,
-                      minZoom: 3,
-                      maxZoom: 19,
-                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
-                    ),
+                  TileLayer(
+                    urlTemplate:
+                        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    userAgentPackageName: "com.example.nakliyeyg",
+                  ),
+                  MarkerLayer(markers: _buildMarkers(loads)),
+                ],
+              ),
+
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
                     children: [
-                      TileLayer(
-                        urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                        userAgentPackageName: "com.example.nakliyeyg",
+                      Expanded(
+                        child: _pill(
+                          icon: Icons.map_outlined,
+                          text: "Merhaba, ${appState.displayName}",
+                        ),
                       ),
-                      MarkerLayer(markers: _buildMarkers(loads)),
+                      const SizedBox(width: 10),
+                      if (_locLoading)
+                        _pill(icon: Icons.gps_fixed, text: "GPS…"),
+                      if (!_locLoading && _pos == null)
+                        _pill(icon: Icons.gps_off, text: "GPS yok"),
+                      const SizedBox(width: 10),
+                      IconButton.filledTonal(
+                        tooltip: "Profil",
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const ProfileScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.person),
+                      ),
                     ],
                   ),
+                ),
+              ),
 
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _pill(
-                                  icon: Icons.map_outlined,
-                                  text: "Merhaba, ${appState.displayName}",
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              if (appState.isAdmin)
-                                IconButton.filled(
-                                  onPressed: () {
-                                    appState.toggleAdminRole();
-                                    _snack("Mod: ${appState.adminViewRole == 'driver' ? 'Şoför' : 'Yük Sahibi'}");
-                                  },
-                                  icon: const Icon(Icons.swap_horiz),
-                                  tooltip: "Rol Değiştir",
-                                  style: IconButton.styleFrom(backgroundColor: Colors.orange),
-                                ),
-                              const SizedBox(width: 10),
-                              IconButton.filledTonal(
-                                tooltip: "Profil",
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                                  );
-                                },
-                                icon: const Icon(Icons.person),
-                              ),
-                            ],
-                          ),
-                          if (appState.isAdmin)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: _pill(
-                                icon: Icons.security,
-                                text: "YÖNETİCİ MODU (${appState.adminViewRole.toUpperCase()})",
-                                color: Colors.orange.withOpacity(0.9),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
+              Positioned(
+                right: 14,
+                bottom: 18 + 80, // panel üstüne binsin diye biraz yukarı
+                child: FloatingActionButton(
+                  onPressed: () {
+                    if (_pos == null) {
+                      _initLocation();
+                    } else {
+                      _goToMyLocation();
+                    }
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
+              ),
 
-                  Positioned(
-                    right: 14,
-                    bottom: 18 + 80,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        if (_pos == null) {
-                          _initLocation();
-                        } else {
-                          _goToMyLocation();
-                        }
-                      },
-                      child: const Icon(Icons.my_location),
-                    ),
-                  ),
-
-                  _buildDraggablePanel(),
-                ],
-              );
-            },
+              // ✅ EN ÖNEMLİ: draggable panel en sonda (üstte görünür)
+              _buildDraggablePanel(),
+            ],
           );
-        }
+        },
       ),
     );
   }
 }
+
+// =================== DRIVER PANEL ===================
 
 class _DriverActiveJobsSheet extends StatelessWidget {
   final ScrollController scrollController;
@@ -1034,7 +1149,7 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? (appState.isAdmin ? "admin_test" : null);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       return ListView(
         controller: scrollController,
@@ -1050,8 +1165,9 @@ class _DriverActiveJobsSheet extends StatelessWidget {
     final q = FirebaseFirestore.instance
         .collection("loads")
         .where("acceptedDriverId", isEqualTo: uid)
-        .where("status", whereIn: ["matched", "delivered_pending"])
-        .orderBy("createdAt", descending: true);
+        .where("status", whereIn: ["matched", "delivered_pending"]).orderBy(
+            "createdAt",
+            descending: true);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: q.snapshots(),
@@ -1085,15 +1201,14 @@ class _DriverActiveJobsSheet extends StatelessWidget {
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
           children: [
-            const Text("Aktif İşler", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            const Text("Aktif İşler",
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             const SizedBox(height: 10),
-
             if (jobs.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(8),
                 child: Text("Henüz aktif işin yok."),
               ),
-
             ...jobs.map((j) {
               final cs = Theme.of(context).colorScheme;
               final isPending = j.status == "delivered_pending";
@@ -1116,7 +1231,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                           Expanded(
                             child: Text(
                               "${j.fromCity} → ${j.toCity}",
-                              style: const TextStyle(fontWeight: FontWeight.w900),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w900),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1129,7 +1245,6 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                         style: TextStyle(color: cs.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
-
                       Row(
                         children: [
                           Expanded(
@@ -1140,7 +1255,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
                                 if (lat == null || lng == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Bu işin konumu yok.")),
+                                    const SnackBar(
+                                        content: Text("Bu işin konumu yok.")),
                                   );
                                   return;
                                 }
@@ -1149,10 +1265,13 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                                   "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving",
                                 );
 
-                                final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                final ok = await launchUrl(uri,
+                                    mode: LaunchMode.externalApplication);
                                 if (!ok && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Google Maps açılamadı.")),
+                                    const SnackBar(
+                                        content:
+                                            Text("Google Maps açılamadı.")),
                                   );
                                 }
                               },
@@ -1166,30 +1285,39 @@ class _DriverActiveJobsSheet extends StatelessWidget {
                               onPressed: isPending
                                   ? null
                                   : () async {
-                                await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
-                                  "status": "delivered_pending",
-                                  "deliveredAt": FieldValue.serverTimestamp(),
-                                });
+                                      await FirebaseFirestore.instance
+                                          .collection("loads")
+                                          .doc(j.id)
+                                          .update({
+                                        "status": "delivered_pending",
+                                        "deliveredAt":
+                                            FieldValue.serverTimestamp(),
+                                      });
 
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Teslim bildirildi ✅")),
-                                  );
-                                }
-                              },
-                              child: Text(isPending ? "Onay bekliyor" : "İşi Bitir"),
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content:
+                                                  Text("Teslim bildirildi ✅")),
+                                        );
+                                      }
+                                    },
+                              child: Text(
+                                  isPending ? "Onay bekliyor" : "İşi Bitir"),
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 10),
-
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.tonal(
                           onPressed: () async {
-                            await FirebaseFirestore.instance.collection("loads").doc(j.id).update({
+                            await FirebaseFirestore.instance
+                                .collection("loads")
+                                .doc(j.id)
+                                .update({
                               "status": "open",
                               "acceptedOfferId": FieldValue.delete(),
                               "acceptedDriverId": FieldValue.delete(),
@@ -1208,7 +1336,8 @@ class _DriverActiveJobsSheet extends StatelessWidget {
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("İş iptal edildi ✅")),
+                                const SnackBar(
+                                    content: Text("İş iptal edildi ✅")),
                               );
                             }
                           },
@@ -1227,12 +1356,15 @@ class _DriverActiveJobsSheet extends StatelessWidget {
   }
 }
 
+// =================== SHIPPER PANEL ===================
+
 class _ShipperLoadsSheet extends StatelessWidget {
   final ScrollController scrollController;
   const _ShipperLoadsSheet({required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Draggable sheet ile aynı controller'ı kullan
     return OffersInboxScreen(controller: scrollController);
   }
 }

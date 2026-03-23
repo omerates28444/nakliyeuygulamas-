@@ -43,7 +43,7 @@ class ActiveJobsBottomBar extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         child: jobs.isEmpty
-            ? _EmptyBar(key: const ValueKey("empty"))
+            ? const _EmptyBar(key: ValueKey("empty"))
             : _JobBarCard(
           key: ValueKey("job_${jobs.first.id}"),
           job: jobs.first,

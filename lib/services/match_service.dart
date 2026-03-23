@@ -21,7 +21,7 @@ class MatchService {
     // 1) Rota uyumu (0-40)
     // Şimdilik basit: aynı şehir çifti -> yüksek puan
     // (sonra yakın şehir, otoyol sapma vb. ekleriz)
-    final routeScore = 40; // v1: tüm yükler "rota adayı" kabul
+    const routeScore = 40; // v1: tüm yükler "rota adayı" kabul
     score += routeScore;
     reasons.add("Rota adayı (+$routeScore)");
 
@@ -58,7 +58,8 @@ class MatchService {
     required List<Load> loads,
     required Vehicle vehicle,
   }) {
-    final results = loads.map((l) => scoreLoad(load: l, vehicle: vehicle)).toList();
+    final results =
+        loads.map((l) => scoreLoad(load: l, vehicle: vehicle)).toList();
     results.sort((a, b) => b.score.compareTo(a.score));
     return results;
   }

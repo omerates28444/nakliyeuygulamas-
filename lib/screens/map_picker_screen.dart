@@ -10,7 +10,7 @@ class MapPickerScreen extends StatefulWidget {
 }
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
-  LatLng selectedPoint = LatLng(39.0, 35.0);
+  LatLng selectedPoint = const LatLng(39.0, 35.0);
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     point: selectedPoint,
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                    child: const Icon(Icons.location_on,
+                        color: Colors.red, size: 40),
                   ),
                 ],
               ),

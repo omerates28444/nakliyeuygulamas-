@@ -165,29 +165,31 @@ class _LoadCreateScreenState extends State<LoadCreateScreen> {
             onPressed: saving
                 ? null
                 : () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MapPickerScreen()),
-              );
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const MapPickerScreen()),
+                    );
 
-              if (result != null) {
-                setState(() {
-                  selectedLat = result['lat'] as double;
-                  selectedLng = result['lng'] as double;
-                });
-              }
-            },
+                    if (result != null) {
+                      setState(() {
+                        selectedLat = result['lat'] as double;
+                        selectedLng = result['lng'] as double;
+                      });
+                    }
+                  },
           ),
           const SizedBox(height: 10),
 
           DropdownButtonFormField<String>(
-            value: priceType,
+            initialValue: priceType,
             decoration: const InputDecoration(labelText: "Fiyat Tipi"),
             items: const [
               DropdownMenuItem(value: "offer", child: Text("Teklif Usulü")),
               DropdownMenuItem(value: "fixed", child: Text("Sabit Fiyat")),
             ],
-            onChanged: saving ? null : (v) => setState(() => priceType = v ?? "offer"),
+            onChanged:
+                saving ? null : (v) => setState(() => priceType = v ?? "offer"),
           ),
 
           const SizedBox(height: 10),

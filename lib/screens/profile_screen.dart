@@ -24,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _profileFuture = _loadProfile();
   }
+
   bool saving = false;
 
   final nameCtrl = TextEditingController();
@@ -35,7 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final capacityCtrl = TextEditingController();
   final vehicleTypeCtrl = TextEditingController();
   String vehicleType = "Kamyonet";
-
 
   @override
   void dispose() {
@@ -49,10 +49,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _snack(String msg) {
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
   Future<bool> _reauthWithPassword(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
@@ -76,8 +76,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Devam")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Vazgeç")),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Devam")),
         ],
       ),
     );
@@ -112,7 +116,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     phoneCtrl.text = (data["phone"] ?? "").toString();
     cityCtrl.text = (data["city"] ?? "").toString();
 
-    final extra = (data["extra"] is Map) ? Map<String, dynamic>.from(data["extra"]) : <String, dynamic>{};
+    final extra = (data["extra"] is Map)
+        ? Map<String, dynamic>.from(data["extra"])
+        : <String, dynamic>{};
     vehicleType = (extra["vehicleType"] ?? "Kamyonet").toString();
     plateCtrl.text = (extra["plate"] ?? "").toString();
     capacityCtrl.text = (extra["capacityKg"] ?? "").toString();
@@ -180,14 +186,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: pass1, obscureText: true, decoration: const InputDecoration(labelText: "Yeni şifre")),
+            TextField(
+                controller: pass1,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: "Yeni şifre")),
             const SizedBox(height: 10),
-            TextField(controller: pass2, obscureText: true, decoration: const InputDecoration(labelText: "Yeni şifre tekrar")),
+            TextField(
+                controller: pass2,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: "Yeni şifre tekrar")),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Vazgeç")),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Güncelle")),
         ],
       ),
     );
@@ -223,8 +240,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: const InputDecoration(labelText: "Yeni e-posta"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Vazgeç")),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Güncelle")),
         ],
       ),
     );
@@ -240,11 +261,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final okReauth = await _reauthWithPassword(context);
       if (!okReauth) return;
 
-      await FirebaseAuth.instance.currentUser!.verifyBeforeUpdateEmail(newEmail);
+      await FirebaseAuth.instance.currentUser!
+          .verifyBeforeUpdateEmail(newEmail);
 
-
-
-      _snack("Doğrulama maili gönderildi ✅ Mailden onaylayınca e-posta değişir.");
+      _snack(
+          "Doğrulama maili gönderildi ✅ Mailden onaylayınca e-posta değişir.");
     } catch (e) {
       _snack("E-posta değiştirilemedi: $e");
     }
@@ -293,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-                    (route) => false,
+                (route) => false,
               );
             },
           ),
@@ -312,15 +333,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-
               // 🔹 PROFİL KARTI
               Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
-
                       FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                         future: FirebaseFirestore.instance
                             .collection("users")
@@ -328,16 +348,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             .get(),
                         builder: (context, snap) {
                           final d = snap.data?.data() ?? {};
-                          final avg = (d["ratingAvg"] is num) ? (d["ratingAvg"] as num).toDouble() : 0.0;
-                          final cnt = (d["ratingCount"] is int) ? d["ratingCount"] as int : 0;
+                          final avg = (d["ratingAvg"] is num)
+                              ? (d["ratingAvg"] as num).toDouble()
+                              : 0.0;
+                          final cnt = (d["ratingCount"] is int)
+                              ? d["ratingCount"] as int
+                              : 0;
 
                           return Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withOpacity(0.5),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                              border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant),
                             ),
                             child: Row(
                               children: [
@@ -346,7 +377,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Expanded(
                                   child: Text(
                                     "${avg.toStringAsFixed(1)}  •  $cnt değerlendirme",
-                                    style: const TextStyle(fontWeight: FontWeight.w900),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w900),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -358,23 +390,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: "Ad Soyad"),
+                        decoration:
+                            const InputDecoration(labelText: "Ad Soyad"),
                       ),
-
                       TextField(
                         controller: phoneCtrl,
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(labelText: "Telefon"),
                       ),
                       const SizedBox(height: 10),
-
                       TextField(
                         controller: cityCtrl,
                         decoration: const InputDecoration(labelText: "Şehir"),
                       ),
-
                       const SizedBox(height: 10),
-
                       if (appState.role == "driver") ...[
                         Padding(
                           padding: const EdgeInsets.only(top: 6, bottom: 8),
@@ -389,35 +418,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-
                         DropdownButtonFormField<String>(
-                          value: vehicleType,
-                          decoration: const InputDecoration(labelText: "Araç tipi"),
+                          initialValue: vehicleType,
+                          decoration:
+                              const InputDecoration(labelText: "Araç tipi"),
                           items: const [
-                            DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
-                            DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
+                            DropdownMenuItem(
+                                value: "Kamyonet", child: Text("Kamyonet")),
+                            DropdownMenuItem(
+                                value: "Kamyon", child: Text("Kamyon")),
                             DropdownMenuItem(value: "Tır", child: Text("Tır")),
-                            DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
+                            DropdownMenuItem(
+                                value: "Frigo", child: Text("Frigo")),
                           ],
-                          onChanged: (v) => setState(() => vehicleType = v ?? "Kamyonet"),
+                          onChanged: (v) =>
+                              setState(() => vehicleType = v ?? "Kamyonet"),
                         ),
                         const SizedBox(height: 10),
-
                         TextField(
                           controller: plateCtrl,
                           decoration: const InputDecoration(labelText: "Plaka"),
                         ),
                         const SizedBox(height: 10),
-
                         TextField(
                           controller: capacityCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: "Kapasite (kg)"),
+                          decoration:
+                              const InputDecoration(labelText: "Kapasite (kg)"),
                         ),
                       ],
-
                       const SizedBox(height: 12),
-
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
@@ -435,7 +465,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // 🔹 ŞİFRE + EMAIL
               Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
                 child: Column(
                   children: [
                     ListTile(
@@ -457,15 +488,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
 
               // 🔹 GEÇMİŞ İŞLER
-              const Text("Geçmiş İşler", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Geçmiş İşler",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
 
               const SizedBox(height: 8),
 
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection("loads")
-                    .where(appState.role == "driver" ? "acceptedDriverId" : "shipperId",
-                    isEqualTo: AuthService().currentUser?.uid)
+                    .where(
+                        appState.role == "driver"
+                            ? "acceptedDriverId"
+                            : "shipperId",
+                        isEqualTo: AuthService().currentUser?.uid)
                     .where("status", isEqualTo: "done")
                     .orderBy("doneAt", descending: true)
                     .snapshots(),
@@ -473,18 +508,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (snap.hasError) return Text("Hata: ${snap.error}");
                   if (!snap.hasData) return const SizedBox();
 
-                  final jobs = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
+                  final jobs =
+                      snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
 
                   if (jobs.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         children: [
-                          Icon(Icons.history, color: Theme.of(context).colorScheme.outline),
+                          Icon(Icons.history,
+                              color: Theme.of(context).colorScheme.outline),
                           const SizedBox(width: 8),
                           Text(
                             "Henüz tamamlanan iş yok.",
-                            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.outline),
                           ),
                         ],
                       ),
@@ -497,7 +535,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: ListTile(
                           title: Text("${j.fromCity} → ${j.toCity}"),
                           subtitle: Text("${j.weightKg} kg"),
-                          trailing: const Icon(Icons.check_circle, color: Colors.green),
+                          trailing: const Icon(Icons.check_circle,
+                              color: Colors.green),
                         ),
                       );
                     }).toList(),
@@ -508,7 +547,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
 
               // 🔴 ÇIKIŞ BUTONU
-
             ],
           );
         },

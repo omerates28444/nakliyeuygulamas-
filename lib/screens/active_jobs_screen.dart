@@ -7,7 +7,8 @@ import '../models/load.dart';
 import '../services/auth_service.dart';
 
 class ActiveJobsScreen extends StatelessWidget {
-  final void Function(String jobId) onOpenOnMap; // (artık zorunlu değil ama dursun)
+  final void Function(String jobId)
+      onOpenOnMap; // (artık zorunlu değil ama dursun)
 
   const ActiveJobsScreen({super.key, required this.onOpenOnMap});
 
@@ -22,14 +23,16 @@ class ActiveJobsScreen extends StatelessWidget {
     final q = FirebaseFirestore.instance
         .collection("loads")
         .where("acceptedDriverId", isEqualTo: uid)
-        .where("status", whereIn: ["matched", "delivered_pending"])
-        .orderBy("createdAt", descending: true);
+        .where("status", whereIn: ["matched", "delivered_pending"]).orderBy(
+            "createdAt",
+            descending: true);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: q.snapshots(),
       builder: (context, snap) {
         if (snap.hasError) return Center(child: Text("Hata: ${snap.error}"));
-        if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snap.hasData)
+          return const Center(child: CircularProgressIndicator());
 
         final jobs = snap.data!.docs.map((d) => Load.fromDoc(d)).toList();
 
@@ -40,7 +43,8 @@ class ActiveJobsScreen extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(12),
           children: [
-            Text("Aktif İşler", style: Theme.of(context).textTheme.headlineSmall),
+            Text("Aktif İşler",
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             ...jobs.map((j) {
               final cs = Theme.of(context).colorScheme;
@@ -48,7 +52,8 @@ class ActiveJobsScreen extends StatelessWidget {
 
               Widget pill(String text, {required Color color, IconData? icon}) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(color: color),
@@ -61,7 +66,9 @@ class ActiveJobsScreen extends StatelessWidget {
                         Icon(icon, size: 16, color: color),
                         const SizedBox(width: 6),
                       ],
-                      Text(text, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+                      Text(text,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, color: color)),
                     ],
                   ),
                 );
@@ -86,22 +93,28 @@ class ActiveJobsScreen extends StatelessWidget {
                             CircleAvatar(
                               radius: 18,
                               backgroundColor: cs.surfaceContainerHighest,
-                              child: Icon(Icons.work_outline, color: cs.onSurfaceVariant),
+                              child: Icon(Icons.work_outline,
+                                  color: cs.onSurfaceVariant),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 "${j.fromCity} → ${j.toCity}",
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900, fontSize: 16),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
                             if (isPending)
-                              pill("Onay bekliyor", color: Colors.orange, icon: Icons.hourglass_bottom)
+                              pill("Onay bekliyor",
+                                  color: Colors.orange,
+                                  icon: Icons.hourglass_bottom)
                             else
-                              pill("Aktif", color: Colors.green, icon: Icons.check_circle_outline),
+                              pill("Aktif",
+                                  color: Colors.green,
+                                  icon: Icons.check_circle_outline),
                           ],
                         ),
 
@@ -123,52 +136,59 @@ class ActiveJobsScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 10),
-
                             Expanded(
                               child: FilledButton(
                                 onPressed: (!isPending)
                                     ? () async {
-                                  final ok = await showDialog<bool>(
-                                    context: context,
-                                    builder: (_) => AlertDialog(
-                                      title: const Text("Teslim edildi mi?"),
-                                      content: const Text(
-                                        "Devam edersen iş 'Onay bekliyor' durumuna geçer. "
-                                            "Yük sahibi onaylayınca iş tamamlanır.",
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
-                                          child: const Text("Vazgeç"),
-                                        ),
-                                        FilledButton(
-                                          onPressed: () => Navigator.pop(context, true),
-                                          child: const Text("Teslim Ettim"),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (ok != true) return;
+                                        final ok = await showDialog<bool>(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title:
+                                                const Text("Teslim edildi mi?"),
+                                            content: const Text(
+                                              "Devam edersen iş 'Onay bekliyor' durumuna geçer. "
+                                              "Yük sahibi onaylayınca iş tamamlanır.",
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, false),
+                                                child: const Text("Vazgeç"),
+                                              ),
+                                              FilledButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, true),
+                                                child:
+                                                    const Text("Teslim Ettim"),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (ok != true) return;
 
-                                  try {
-                                    await _markDelivered(loadId: j.id);
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("Teslim bildirimi gönderildi ✅")),
-                                    );
-                                  } catch (e) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("Hata: $e")),
-                                    );
-                                  }
-                                }
+                                        try {
+                                          await _markDelivered(loadId: j.id);
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    "Teslim bildirimi gönderildi ✅")),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(content: Text("Hata: $e")),
+                                          );
+                                        }
+                                      }
                                     : null,
-                                child: Text(isPending ? "Onay bekliyor" : "İşi Bitir"),
+                                child: Text(
+                                    isPending ? "Onay bekliyor" : "İşi Bitir"),
                               ),
                             ),
                             const SizedBox(width: 10),
-
                             Expanded(
                               child: FilledButton.tonal(
                                 onPressed: () async {
@@ -176,14 +196,17 @@ class ActiveJobsScreen extends StatelessWidget {
                                     context: context,
                                     builder: (_) => AlertDialog(
                                       title: const Text("İşi iptal et?"),
-                                      content: const Text("İptal edersen iş tekrar açık ilana döner ve teklifler silinir."),
+                                      content: const Text(
+                                          "İptal edersen iş tekrar açık ilana döner ve teklifler silinir."),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
                                           child: const Text("Vazgeç"),
                                         ),
                                         FilledButton(
-                                          onPressed: () => Navigator.pop(context, true),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
                                           child: const Text("İptal Et"),
                                         ),
                                       ],
@@ -195,12 +218,14 @@ class ActiveJobsScreen extends StatelessWidget {
                                     await _cancelJob(loadId: j.id);
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("İş iptal edildi ✅")),
+                                      const SnackBar(
+                                          content: Text("İş iptal edildi ✅")),
                                     );
                                   } catch (e) {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text("İptal hatası: $e")),
+                                      SnackBar(
+                                          content: Text("İptal hatası: $e")),
                                     );
                                   }
                                 },
@@ -214,7 +239,7 @@ class ActiveJobsScreen extends StatelessWidget {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         );
       },
@@ -227,7 +252,8 @@ class ActiveJobsScreen extends StatelessWidget {
 
     if (lat == null || lng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Bu işin konumu yok (fromLat/fromLng boş).")),
+        const SnackBar(
+            content: Text("Bu işin konumu yok (fromLat/fromLng boş).")),
       );
       return;
     }
@@ -253,7 +279,7 @@ class ActiveJobsScreen extends StatelessWidget {
     final ref = db.collection("loads").doc(loadId);
 
     final snap = await ref.get();
-    final data = snap.data() as Map<String, dynamic>?;
+    final data = snap.data();
     if (data == null) throw Exception("İlan bulunamadı");
 
     if ((data["acceptedDriverId"] ?? "") != uid) {
@@ -278,7 +304,7 @@ class ActiveJobsScreen extends StatelessWidget {
     final ref = db.collection("loads").doc(loadId);
 
     final snap = await ref.get();
-    final data = snap.data() as Map<String, dynamic>?;
+    final data = snap.data();
     if (data == null) throw Exception("İlan bulunamadı");
 
     if ((data["acceptedDriverId"] ?? "") != uid) {
@@ -293,7 +319,8 @@ class ActiveJobsScreen extends StatelessWidget {
     });
 
     // ✅ 2) O işe ait tüm teklifleri SİL (sıfırdan teklif verilebilsin)
-    final offers = await db.collection("offers").where("loadId", isEqualTo: loadId).get();
+    final offers =
+        await db.collection("offers").where("loadId", isEqualTo: loadId).get();
     final batch = db.batch();
     for (final d in offers.docs) {
       batch.delete(d.reference);
