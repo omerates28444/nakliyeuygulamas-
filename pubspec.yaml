@@ -47,6 +47,7 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
 
+
 flutter:
   uses-material-design: true
 
@@ -54,15 +55,9 @@ flutter:
     - assets/icon.png
     - assets/logo.png
 
-# 🟢 İKON AYARLARI 🟢
 flutter_launcher_icons:
-  android: "ic_launcher"
+  android: true
   ios: false
   image_path: "assets/icon.png"
-
-  # Logonun arka planındaki o koyu lacivert rengi buraya yazdık.
-  # Android bu rengi alıp, yuvarlak çerçevenin içindeki beyazlıkları dolduracak.
   adaptive_icon_background: "#040E27"
-
-  # Logonun kendisini de ön plana (merkeze) koyuyoruz.
   adaptive_icon_foreground: "assets/icon.png"

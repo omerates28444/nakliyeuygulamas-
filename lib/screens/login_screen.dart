@@ -31,6 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
   bool acceptTerms = false;
 
+  // 🟢 OSM MAP / FERAH TEMA RENKLERİ 🟢
+  final Color primaryDark = const Color(0xFF081226); // Sadece yazılar için
+  final Color primaryBlue = const Color(0xFF1976D2); // Butonlar ve ikonlar için (Harita Mavisi)
+
   @override
   void dispose() {
     emailCtrl.dispose();
@@ -46,9 +50,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool get isDriver => appState.role == "driver";
 
-  void _snack(String msg) {
+  void _snack(String msg, {bool isError = true}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        )
+    );
   }
 
   void _goToApp() {
@@ -87,15 +98,15 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (email.isEmpty || pass.isEmpty) {
-        _snack("Email ve şifre gir!");
+        _snack("Lütfen e-posta ve şifrenizi girin.");
         return;
       }
       if (!_isValidEmail(email)) {
-        _snack("Email formatı hatalı.");
+        _snack("Geçersiz e-posta formatı.");
         return;
       }
       if (pass.length < 6) {
-        _snack("Şifre en az 6 karakter olmalı.");
+        _snack("Şifreniz en az 6 karakter olmalıdır.");
         return;
       }
 
@@ -105,40 +116,19 @@ class _LoginScreenState extends State<LoginScreen> {
         final city = cityCtrl.text.trim();
         final pass2 = pass2Ctrl.text.trim();
 
-        if (name.isEmpty) {
-          _snack("Ad Soyad gir!");
-          return;
-        }
-        if (phone.length < 10) {
-          _snack("Telefon numarası en az 10 hane olmalı.");
-          return;
-        }
-        if (city.isEmpty) {
-          _snack("Şehir gir!");
-          return;
-        }
-        if (pass2 != pass) {
-          _snack("Şifreler eşleşmiyor.");
-          return;
-        }
-        if (!acceptTerms) {
-          _snack("KVKK / kullanım şartlarını kabul etmelisin.");
-          return;
-        }
+        if (name.isEmpty) return _snack("Ad Soyad giriniz.");
+        if (phone.length < 10) return _snack("Geçerli bir telefon numarası giriniz.");
+        if (city.isEmpty) return _snack("Şehir giriniz.");
+        if (pass2 != pass) return _snack("Şifreler eşleşmiyor.");
+        if (!acceptTerms) return _snack("Kullanım şartlarını kabul etmelisiniz.");
 
         Map<String, dynamic> driverInfo = {};
         if (isDriver) {
           final plate = plateCtrl.text.trim();
           final cap = int.tryParse(capacityCtrl.text.trim());
 
-          if (plate.isEmpty) {
-            _snack("Plaka gir!");
-            return;
-          }
-          if (cap == null || cap <= 0) {
-            _snack("Kapasite (kg) sayı olmalı.");
-            return;
-          }
+          if (plate.isEmpty) return _snack("Araç plakası giriniz.");
+          if (cap == null || cap <= 0) return _snack("Geçerli bir kapasite (kg) giriniz.");
 
           driverInfo = {"vehicleType": vehicleType, "plate": plate, "capacityKg": cap};
         }
@@ -153,14 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
           extra: driverInfo,
         );
 
-        // 🟢 DEĞİŞEN KISIM: Kayıt olan kişi şoförse, kapasiteyi appState'e de ver
         int? registeredCapacity;
         if (isDriver) {
           registeredCapacity = int.tryParse(capacityCtrl.text.trim());
         }
         appState.login(name: name, capacity: registeredCapacity);
 
-        _snack("Kayıt başarılı ✅");
+        _snack("Kayıt başarılı! Yönlendiriliyorsunuz...", isError: false);
         if (!mounted) return;
         _goToApp();
       } else {
@@ -177,26 +166,23 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (profileRole != selectedRole) {
-          // ... (rol uyuşmazlığı hatası aynı kalıyor)
+          await auth.logout();
+          return _snack("Bu hesap bir '$profileRole' hesabı. Lütfen doğru rolden giriş yapın.");
         }
 
-        // 🟢 DEĞİŞEN KISIM: Firebase'den gelen profilin içinden 'extra' -> 'capacityKg' değerini al
         int? loginCapacity;
         if (profileRole == "driver" && profile['extra'] != null) {
-          // Firestore'dan gelen veri num veya int olabilir, güvenli şekilde dönüştürüyoruz
           loginCapacity = (profile['extra']['capacityKg'] as num?)?.toInt();
         }
 
         appState.setRole(profileRole);
-        // 🟢 Kapasiteyi sisteme bildiriyoruz
         appState.login(name: profileName, capacity: loginCapacity);
 
-        _snack("Giriş başarılı ✅");
+        _snack("Giriş başarılı! Hoş geldiniz.", isError: false);
         if (!mounted) return;
         _goToApp();
       }
     } on FirebaseAuthException catch (e) {
-      // Firebase'den gelen özel hataları yakalıyoruz
       if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
         _snack("E-posta veya şifre hatalı.");
       } else if (e.code == 'email-already-in-use') {
@@ -208,19 +194,42 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (e.code == 'weak-password') {
         _snack("Şifreniz çok zayıf, daha güçlü bir şifre belirleyin.");
       } else {
-        _snack("Bir sorun oluştu. Lütfen tekrar deneyin.");
+        _snack("Bir sorun oluştu: ${e.message}");
       }
     } catch (e) {
-      // Firebase dışındaki diğer genel hatalar
-      _snack("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.");
+      _snack("Beklenmeyen bir hata oluştu: $e");
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
+  // 🟢 YARDIMCI WIDGET: OSM MAP STİLİ TEXTFIELD 🟢
+  Widget _buildTextField(String label, IconData icon, TextEditingController controller, {bool isPass = false, TextInputType type = TextInputType.text, TextInputAction action = TextInputAction.next}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        obscureText: isPass,
+        keyboardType: type,
+        textInputAction: action,
+        style: TextStyle(fontWeight: FontWeight.w600, color: primaryDark),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.normal),
+          prefixIcon: Icon(icon, color: primaryBlue, size: 22),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primaryBlue, width: 2)),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final roleLabel = isDriver ? "Şoför" : "Yük Sahibi";
 
     return PopScope(
@@ -231,162 +240,184 @@ class _LoginScreenState extends State<LoginScreen> {
         _goBackToRoleSelect();
       },
       child: Scaffold(
+        backgroundColor: Colors.grey.shade50, // Ferah harita arka planı
         appBar: AppBar(
-          title: Text("$roleLabel • ${isRegister ? 'Kayıt Ol' : 'Giriş Yap'}"),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)]),
+              child: Icon(Icons.arrow_back_ios_new, color: primaryDark, size: 18),
+            ),
             onPressed: loading ? null : _goBackToRoleSelect,
           ),
         ),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-            children: [
-              if (isRegister) ...[
-                _SectionCard(
-                  title: "Profil Bilgileri",
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: "Ad Soyad"),
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: phoneCtrl,
-                        decoration: const InputDecoration(labelText: "Telefon (05xx...)"),
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: cityCtrl,
-                        decoration: const InputDecoration(labelText: "Şehir"),
-                        textInputAction: TextInputAction.next,
-                      ),
-                    ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 🟢 LOGO ALANI 🟢
+                Container(
+                  width: 90, height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset('assets/icon.png', fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.local_shipping, size: 45, color: primaryBlue);
+                    }),
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (isDriver) ...[
+                const SizedBox(height: 24),
+
+                // 🟢 KARŞILAMA METNİ 🟢
+                Text(
+                  isRegister ? "Hesap Oluştur" : "Tekrar Hoş Geldiniz",
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: primaryDark),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "$roleLabel olarak devam ediyorsunuz.",
+                  style: TextStyle(fontSize: 15, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 32),
+
+                // 🟢 KAYIT FORMU 🟢
+                if (isRegister) ...[
                   _SectionCard(
-                    title: "Araç Bilgileri",
-                    subtitle: "Sadece şoför kayıt ekranında istenir.",
+                    title: "Kişisel Bilgiler",
                     child: Column(
                       children: [
-                        DropdownButtonFormField<String>(
-                          value: vehicleType,
-                          decoration: const InputDecoration(labelText: "Araç Tipi"),
-                          items: const [
-                            DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
-                            DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
-                            DropdownMenuItem(value: "Tır", child: Text("Tır")),
-                            DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
-                          ],
-                          onChanged: loading ? null : (v) => setState(() => vehicleType = v ?? "Kamyonet"),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: plateCtrl,
-                          decoration: const InputDecoration(labelText: "Plaka"),
-                          textInputAction: TextInputAction.next,
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: capacityCtrl,
-                          decoration: const InputDecoration(labelText: "Kapasite (kg)"),
-                          keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.next,
-                        ),
+                        _buildTextField("Ad Soyad", Icons.person_outline, nameCtrl),
+                        _buildTextField("Telefon (05xx...)", Icons.phone_outlined, phoneCtrl, type: TextInputType.phone),
+                        _buildTextField("Şehir", Icons.location_city_outlined, cityCtrl, action: isDriver ? TextInputAction.next : TextInputAction.done),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ],
-
-              _SectionCard(
-                title: "Hesap Bilgileri",
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: emailCtrl,
-                      decoration: const InputDecoration(labelText: "Email"),
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: passCtrl,
-                      decoration: const InputDecoration(labelText: "Şifre (min 6)"),
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: isRegister ? TextInputAction.next : TextInputAction.done,
-                    ),
-                    if (isRegister) ...[
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: pass2Ctrl,
-                        decoration: const InputDecoration(labelText: "Şifre Tekrar"),
-                        obscureText: true,
-                        textInputAction: TextInputAction.done,
+                  if (isDriver) ...[
+                    const SizedBox(height: 16),
+                    _SectionCard(
+                      title: "Araç Bilgileri",
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: DropdownButtonFormField<String>(
+                              value: vehicleType,
+                              style: TextStyle(fontWeight: FontWeight.w600, color: primaryDark),
+                              decoration: InputDecoration(
+                                labelText: "Araç Tipi",
+                                prefixIcon: Icon(Icons.local_shipping_outlined, color: primaryBlue, size: 22),
+                                filled: true, fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primaryBlue, width: 2)),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
+                                DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
+                                DropdownMenuItem(value: "Tır", child: Text("Tır")),
+                                DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
+                              ],
+                              onChanged: loading ? null : (v) => setState(() => vehicleType = v ?? "Kamyonet"),
+                            ),
+                          ),
+                          _buildTextField("Plaka", Icons.pin_outlined, plateCtrl),
+                          _buildTextField("Kapasite (kg)", Icons.scale_outlined, capacityCtrl, type: TextInputType.number, action: TextInputAction.done),
+                        ],
                       ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+
+                // 🟢 GİRİŞ / HESAP FORMU 🟢
+                _SectionCard(
+                  title: "Hesap Bilgileri",
+                  child: Column(
+                    children: [
+                      _buildTextField("E-posta Adresi", Icons.alternate_email, emailCtrl, type: TextInputType.emailAddress),
+                      _buildTextField("Şifre (min 6 karakter)", Icons.lock_outline, passCtrl, isPass: true, action: isRegister ? TextInputAction.next : TextInputAction.done),
+                      if (isRegister)
+                        _buildTextField("Şifre Tekrar", Icons.lock_outline, pass2Ctrl, isPass: true, action: TextInputAction.done),
                     ],
+                  ),
+                ),
+
+                if (isRegister) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
+                    child: CheckboxListTile(
+                      value: acceptTerms,
+                      activeColor: primaryBlue,
+                      checkColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      onChanged: loading ? null : (v) => setState(() => acceptTerms = v ?? false),
+                      title: Text("KVKK ve Kullanım Şartlarını okudum, onaylıyorum.", style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 32),
+
+                // 🟢 ANA BUTON (HARİTA STİLİ FERAH MAVİ) 🟢
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: primaryBlue, // Haritadaki canlı mavi buton
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 2,
+                    ),
+                    onPressed: loading ? null : submit,
+                    child: loading
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                        : Text(
+                      isRegister ? "Kayıt Ol" : "Giriş Yap",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 🟢 GEÇİŞ BUTONU 🟢
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      isRegister ? "Zaten hesabınız var mı?" : "Hesabınız yok mu?",
+                      style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    TextButton(
+                      onPressed: loading ? null : () => setState(() {
+                        isRegister = !isRegister;
+                        passCtrl.clear();
+                        if (!isRegister) pass2Ctrl.clear();
+                      }),
+                      style: TextButton.styleFrom(foregroundColor: primaryBlue),
+                      child: Text(
+                        isRegister ? "Giriş Yap" : "Hemen Kayıt Ol",
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 12),
-
-              if (isRegister)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outlineVariant),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: CheckboxListTile(
-                    value: acceptTerms,
-                    onChanged: loading ? null : (v) => setState(() => acceptTerms = v ?? false),
-                    title: const Text("KVKK / Kullanım şartlarını kabul ediyorum."),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton(
-                  onPressed: loading ? null : submit,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (loading) ...[
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      Text(isRegister ? "Kayıt Ol" : "Giriş Yap"),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              TextButton(
-                onPressed: loading ? null : () => setState(() => isRegister = !isRegister),
-                child: Text(isRegister ? "Zaten hesabım var (Giriş)" : "Hesap oluştur (Kayıt)"),
-              ),
-            ],
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -394,33 +425,31 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// 🟢 FERAH KART WIDGET'I (Osm Map Stili) 🟢
 class _SectionCard extends StatelessWidget {
   final String title;
-  final String? subtitle;
   final Widget child;
 
-  const _SectionCard({required this.title, this.subtitle, required this.child});
+  const _SectionCard({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(subtitle!, style: TextStyle(color: cs.onSurfaceVariant)),
-            ],
-            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0, left: 4),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF081226))),
+            ),
             child,
           ],
         ),

@@ -31,14 +31,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final phoneCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
 
-  // şoför ekstra
   final plateCtrl = TextEditingController();
   final capacityCtrl = TextEditingController();
   final vehicleTypeCtrl = TextEditingController();
-  final ibanCtrl = TextEditingController(); // 🟢 YENİ: IBAN KONTROLCÜSÜ
+  final ibanCtrl = TextEditingController();
 
   String vehicleType = "Kamyonet";
   String kycStatus = "none";
+
+  // Harita Arayüzü Renkleri (Ferah ve Temiz)
+  final Color primaryDark = const Color(0xFF081226); // Sadece yazılar için
+  final Color primaryBlue = const Color(0xFF1976D2); // Butonlar ve ikonlar için
 
   @override
   void dispose() {
@@ -48,13 +51,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     plateCtrl.dispose();
     capacityCtrl.dispose();
     vehicleTypeCtrl.dispose();
-    ibanCtrl.dispose(); // 🟢 YENİ EKLENDİ
+    ibanCtrl.dispose();
     super.dispose();
   }
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
   }
 
   Future<bool> _reauthWithPassword(BuildContext context) async {
@@ -66,22 +69,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Güvenlik Doğrulaması"),
+        backgroundColor: Colors.white,
+        title: const Text("Güvenlik Doğrulaması", style: TextStyle(fontWeight: FontWeight.w900)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text("Devam etmek için mevcut şifreni gir."),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: passCtrl,
               obscureText: true,
-              decoration: const InputDecoration(labelText: "Mevcut Şifre"),
+              decoration: InputDecoration(
+                labelText: "Mevcut Şifre",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Devam")),
+          FilledButton(style: FilledButton.styleFrom(backgroundColor: primaryBlue), onPressed: () => Navigator.pop(context, true), child: const Text("Devam")),
         ],
       ),
     );
@@ -111,7 +118,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final snap = await db.collection("users").doc(uid).get();
     final data = snap.data() ?? {};
-
     final extra = (data["extra"] is Map) ? Map<String, dynamic>.from(data["extra"]) : <String, dynamic>{};
 
     setState(() {
@@ -122,10 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       vehicleType = (extra["vehicleType"] ?? "Kamyonet").toString();
       plateCtrl.text = (extra["plate"] ?? "").toString();
       capacityCtrl.text = (extra["capacityKg"] ?? "").toString();
-
-      // 🟢 YENİ: Firebase'den IBAN'ı okuma
       ibanCtrl.text = (extra["iban"] ?? "").toString();
-
       kycStatus = (extra["kycStatus"] ?? data["kycStatus"] ?? "none").toString();
     });
   }
@@ -139,7 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (uid == null) throw Exception("Oturum yok");
 
       final isDriver = appState.role == "driver";
-
       final name = nameCtrl.text.trim();
       final phone = phoneCtrl.text.trim();
       final city = cityCtrl.text.trim();
@@ -157,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (isDriver) {
         final cap = int.tryParse(capacityCtrl.text.trim());
-        final iban = ibanCtrl.text.trim().replaceAll(" ", ""); // 🟢 Boşlukları temizle
+        final iban = ibanCtrl.text.trim().replaceAll(" ", "");
 
         if (plateCtrl.text.trim().isEmpty) throw Exception("Plaka boş olamaz");
         if (cap == null || cap <= 0) throw Exception("Kapasite geçerli olmalı");
@@ -168,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         update["extra.vehicleType"] = vehicleType;
         update["extra.plate"] = plateCtrl.text.trim();
         update["extra.capacityKg"] = cap;
-        update["extra.iban"] = iban.toUpperCase(); // 🟢 YENİ: IBAN'ı kaydet
+        update["extra.iban"] = iban.toUpperCase();
       }
 
       await db.collection("users").doc(uid).update(update);
@@ -176,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appState.displayName = name;
       appState.notifyListeners();
 
-      _snack("Bilgiler güncellendi ✅");
+      _snack("Bilgiler başarıyla güncellendi ✅");
     } catch (e) {
       _snack("Hata: $e");
     } finally {
@@ -191,24 +193,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Şifre Değiştir"),
+        backgroundColor: Colors.white,
+        title: const Text("Şifre Değiştir", style: TextStyle(fontWeight: FontWeight.w900)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: pass1, obscureText: true, decoration: const InputDecoration(labelText: "Yeni şifre")),
-            const SizedBox(height: 10),
-            TextField(controller: pass2, obscureText: true, decoration: const InputDecoration(labelText: "Yeni şifre tekrar")),
+            TextField(controller: pass1, obscureText: true, decoration: InputDecoration(labelText: "Yeni şifre", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            const SizedBox(height: 12),
+            TextField(controller: pass2, obscureText: true, decoration: InputDecoration(labelText: "Yeni şifre tekrar", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
+          FilledButton(style: FilledButton.styleFrom(backgroundColor: primaryBlue), onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
         ],
       ),
     );
 
     if (ok != true) return;
-
     final p1 = pass1.text.trim();
     final p2 = pass2.text.trim();
     if (p1.length < 6) return _snack("Şifre en az 6 karakter olmalı");
@@ -217,9 +219,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final okReauth = await _reauthWithPassword(context);
       if (!okReauth) return;
-
       await FirebaseAuth.instance.currentUser!.updatePassword(p1);
-      _snack("Şifre güncellendi ✅");
+      _snack("Şifre başarıyla güncellendi ✅");
     } catch (e) {
       _snack("Şifre değiştirilemedi");
     }
@@ -231,30 +232,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("E-posta Değiştir"),
+        backgroundColor: Colors.white,
+        title: const Text("E-posta Değiştir", style: TextStyle(fontWeight: FontWeight.w900)),
         content: TextField(
           controller: emailCtrl,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: "Yeni e-posta"),
+          decoration: InputDecoration(labelText: "Yeni e-posta", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
+          FilledButton(style: FilledButton.styleFrom(backgroundColor: primaryBlue), onPressed: () => Navigator.pop(context, true), child: const Text("Güncelle")),
         ],
       ),
     );
 
     if (ok != true) return;
-
     final newEmail = emailCtrl.text.trim();
-    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(newEmail)) {
-      return _snack("E-posta formatı hatalı");
-    }
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(newEmail)) return _snack("E-posta formatı hatalı");
 
     try {
       final okReauth = await _reauthWithPassword(context);
       if (!okReauth) return;
-
       await FirebaseAuth.instance.currentUser!.verifyBeforeUpdateEmail(newEmail);
       _snack("Doğrulama maili gönderildi ✅ Mailden onaylayınca e-posta değişir.");
     } catch (e) {
@@ -262,35 +260,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // YARDIMCI WIDGET: Harita Paneli Tarzı TextField
+  Widget _buildTextField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: type,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.normal),
+          prefixIcon: Icon(icon, color: primaryBlue, size: 22),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primaryBlue, width: 1.5)),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uid = auth.currentUser?.uid;
-    if (uid == null) return const Center(child: Text("Oturum yok."));
+    if (uid == null) return const Scaffold(body: Center(child: Text("Oturum yok.")));
 
     final isDriver = appState.role == "driver";
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50, // Arka planı çok hafif gri yaptık, beyaz kartlar öne çıksın
       appBar: AppBar(
-        title: const Text("Profilim", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-        backgroundColor: Colors.white,
+        title: Text("Profilim", style: TextStyle(fontWeight: FontWeight.w900, color: primaryDark, fontSize: 22)),
+        backgroundColor: Colors.grey.shade50,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: primaryDark),
+        centerTitle: false,
         actions: [
           IconButton(
             tooltip: "Çıkış Yap",
-            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            icon: const Icon(Icons.logout, color: Colors.redAccent, size: 26),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
+                  backgroundColor: Colors.white,
                   title: const Text("Çıkış yap"),
                   content: const Text("Hesabından çıkmak istiyor musun?"),
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text("Vazgeç"),
-                    ),
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Vazgeç")),
                     FilledButton(
                       style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
                       onPressed: () => Navigator.pop(context, true),
@@ -299,18 +320,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               );
-
               if (ok != true) return;
-
               await AuthService().logout();
               appState.logout();
-
               if (!context.mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-                    (route) => false,
-              );
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const RoleSelectScreen()), (route) => false);
             },
           ),
         ],
@@ -318,13 +332,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: FutureBuilder(
         future: _profileFuture,
         builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
             children: [
+              // 🟢 FERAH PROFİL KARTI (Harita stili)
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance.collection("users").doc(uid).snapshots(),
                 builder: (context, userSnap) {
@@ -340,33 +353,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
 
                   final email = auth.currentUser?.email ?? "";
-                  final firstLetter = displayName.toString().isNotEmpty ? displayName.toString().substring(0, 1).toUpperCase() : "?";
+                  final firstLetter = displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : "?";
 
                   return Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                          Theme.of(context).colorScheme.primary,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Row(
                       children: [
+                        // Haritadaki gibi hafif saydam mavi arkaplanlı avatar
                         CircleAvatar(
                           radius: 36,
-                          backgroundColor: Colors.white,
+                          backgroundColor: primaryBlue.withOpacity(0.12),
                           child: Text(
                             firstLetter,
-                            style: TextStyle(
-                              fontSize: 28,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(fontSize: 30, color: primaryBlue, fontWeight: FontWeight.w900),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -374,32 +379,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                displayName,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
+                              Text(displayName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: primaryDark)),
                               const SizedBox(height: 2),
-                              Text(
-                                email,
-                                style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.8)),
-                              ),
+                              Text(email, style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                               if (isDriver) ...[
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  decoration: BoxDecoration(color: Colors.amber.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                                      Icon(Icons.star_rounded, color: Colors.orange.shade800, size: 18),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        "${avg.toStringAsFixed(1)} ($cnt Puan)",
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
+                                      Text("${avg.toStringAsFixed(1)} ($cnt)", style: TextStyle(color: Colors.orange.shade900, fontWeight: FontWeight.w800, fontSize: 12)),
                                     ],
                                   ),
                                 ),
@@ -413,169 +406,152 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
 
-              const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, bottom: 8),
-                child: Text("Kişisel Bilgiler", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+
+              // 🟢 KİŞİSEL BİLGİLER
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 12),
+                child: Text("Kişisel Bilgiler", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: primaryDark)),
               ),
+              _buildTextField("Ad Soyad", Icons.person_outline, nameCtrl),
+              _buildTextField("Telefon", Icons.phone_outlined, phoneCtrl, type: TextInputType.phone),
+              _buildTextField("Şehir", Icons.location_city_outlined, cityCtrl),
 
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                elevation: 1,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+              if (isDriver) ...[
+                const SizedBox(height: 12),
+                const Divider(color: Colors.black12),
+                const SizedBox(height: 16),
+
+                // 🟢 ARAÇ VE FİNANS BİLGİLERİ
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 12),
+                  child: Text("Araç & Finans Bilgileri", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: primaryDark)),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: DropdownButtonFormField<String>(
+                    value: vehicleType,
+                    style: TextStyle(fontWeight: FontWeight.w600, color: primaryDark),
+                    decoration: InputDecoration(
+                      labelText: "Araç tipi",
+                      labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.normal),
+                      prefixIcon: Icon(Icons.local_shipping_outlined, color: primaryBlue, size: 22),
+                      filled: true, fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: primaryBlue, width: 1.5)),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
+                      DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
+                      DropdownMenuItem(value: "Tır", child: Text("Tır")),
+                      DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
+                    ],
+                    onChanged: (v) => setState(() => vehicleType = v ?? "Kamyonet"),
+                  ),
+                ),
+                _buildTextField("Plaka", Icons.pin_outlined, plateCtrl),
+                _buildTextField("Kapasite (kg)", Icons.scale_outlined, capacityCtrl, type: TextInputType.number),
+                _buildTextField("Banka IBAN (TR...)", Icons.account_balance_wallet_outlined, ibanCtrl),
+
+                // 🟢 FERAH BİLGİ KUTUSU (Harita stili soft yeşil)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.green.withOpacity(0.2))),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(labelText: "Ad Soyad", prefixIcon: Icon(Icons.person_outline)),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(labelText: "Telefon", prefixIcon: Icon(Icons.phone_outlined)),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: cityCtrl,
-                        decoration: const InputDecoration(labelText: "Şehir", prefixIcon: Icon(Icons.location_city_outlined)),
-                      ),
-                      const SizedBox(height: 10),
-
-                      if (isDriver) ...[
-                        const Divider(height: 30),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text("Araç & Finans Bilgileri", style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 10),
-                        DropdownButtonFormField<String>(
-                          value: vehicleType,
-                          decoration: const InputDecoration(labelText: "Araç tipi", prefixIcon: Icon(Icons.local_shipping_outlined)),
-                          items: const [
-                            DropdownMenuItem(value: "Kamyonet", child: Text("Kamyonet")),
-                            DropdownMenuItem(value: "Kamyon", child: Text("Kamyon")),
-                            DropdownMenuItem(value: "Tır", child: Text("Tır")),
-                            DropdownMenuItem(value: "Frigo", child: Text("Frigo")),
-                          ],
-                          onChanged: (v) => setState(() => vehicleType = v ?? "Kamyonet"),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: plateCtrl,
-                          decoration: const InputDecoration(labelText: "Plaka", prefixIcon: Icon(Icons.pin_outlined)),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: capacityCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: "Kapasite (kg)", prefixIcon: Icon(Icons.scale_outlined)),
-                        ),
-                        const SizedBox(height: 10),
-
-                        // 🟢 YENİ: IBAN ALANI EKLENDİ
-                        TextField(
-                          controller: ibanCtrl,
-                          decoration: const InputDecoration(
-                            labelText: "Banka IBAN",
-                            hintText: "TR...",
-                            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 6, left: 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Teslimat tamamlandığında ücretiniz bu IBAN'a yatırılacaktır.",
-                              style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton.icon(
-                          onPressed: _saveProfile,
-                          icon: const Icon(Icons.save),
-                          label: const Text("Bilgileri Kaydet", style: TextStyle(fontSize: 16)),
+                      Icon(Icons.info_outline, color: Colors.green.shade700, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "Teslimat tamamlandığında ücretiniz hiçbir kesinti olmadan bu IBAN'a yatırılacaktır.",
+                          style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w600, height: 1.4),
                         ),
                       ),
                     ],
                   ),
                 ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // 🟢 KAYDET BUTONU (Haritadaki FAB rengi)
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _saveProfile,
+                  icon: saving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.save, size: 22),
+                  label: Text(saving ? "Kaydediliyor..." : "Bilgileri Kaydet", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
               ),
 
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, bottom: 8),
-                child: Text("Hesap Ayarları", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 32),
+
+              // 🟢 HESAP AYARLARI
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 12),
+                child: Text("Hesap Ayarları", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: primaryDark)),
               ),
 
-              Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                elevation: 1,
+              Container(
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.lock_outline),
-                      title: const Text("Şifre Değiştir"),
-                      trailing: const Icon(Icons.chevron_right),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.lock_outline, color: primaryBlue, size: 20)),
+                      title: Text("Şifre Değiştir", style: TextStyle(fontWeight: FontWeight.w700, color: primaryDark)),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                       onTap: _changePassword,
                     ),
-                    const Divider(height: 1),
+                    const Divider(height: 1, indent: 60),
                     ListTile(
-                      leading: const Icon(Icons.alternate_email),
-                      title: const Text("E-posta Değiştir"),
-                      trailing: const Icon(Icons.chevron_right),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.alternate_email, color: primaryBlue, size: 20)),
+                      title: Text("E-posta Değiştir", style: TextStyle(fontWeight: FontWeight.w700, color: primaryDark)),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                       onTap: _changeEmail,
                     ),
                     if (isDriver) ...[
-                      const Divider(height: 1),
+                      const Divider(height: 1, indent: 60),
                       ListTile(
-                        leading: Icon(
-                          Icons.verified_user_outlined,
-                          color: kycStatus == 'approved' ? Colors.green : Colors.orange,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: kycStatus == 'approved' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.verified_user_outlined, color: kycStatus == 'approved' ? Colors.green.shade700 : Colors.orange.shade800, size: 20),
                         ),
-                        title: const Text("Hesap Doğrulama (KYC)"),
+                        title: Text("Hesap Doğrulama (KYC)", style: TextStyle(fontWeight: FontWeight.w700, color: primaryDark)),
                         subtitle: Text(
-                          kycStatus == 'approved'
-                              ? "Hesabınız Onaylandı ✅"
-                              : "Ehliyet ve Kimlik Yükle",
-                          style: TextStyle(color: kycStatus == 'approved' ? Colors.green : Colors.orange),
+                          kycStatus == 'approved' ? "Hesabınız Onaylandı" : "Ehliyet ve Kimlik Yükle",
+                          style: TextStyle(color: kycStatus == 'approved' ? Colors.green.shade700 : Colors.orange.shade800, fontWeight: FontWeight.w600, fontSize: 12),
                         ),
-                        trailing: kycStatus == "approved" ? null : const Icon(Icons.chevron_right),
-                        onTap: kycStatus == "approved"
-                            ? null
-                            : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const KycScreen()),
-                          );
-                        },
+                        trailing: kycStatus == "approved" ? null : const Icon(Icons.chevron_right, color: Colors.grey),
+                        onTap: kycStatus == "approved" ? null : () => Navigator.push(context, MaterialPageRoute(builder: (context) => const KycScreen())),
                       ),
                     ],
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, bottom: 8),
-                child: Text("Geçmiş İşlerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 32),
+
+              // 🟢 GEÇMİŞ İŞLERİM
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 12),
+                child: Text("Geçmiş İşlerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: primaryDark)),
               ),
 
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection("loads")
-                    .where(isDriver ? "acceptedDriverId" : "shipperId", isEqualTo: uid)
-                    .where("status", isEqualTo: "done")
-                    .orderBy("doneAt", descending: true)
-                    .snapshots(),
+                stream: FirebaseFirestore.instance.collection("loads").where(isDriver ? "acceptedDriverId" : "shipperId", isEqualTo: uid).where("status", isEqualTo: "done").orderBy("doneAt", descending: true).snapshots(),
                 builder: (context, snap) {
                   if (snap.hasError) return Center(child: Text("Hata: ${snap.error}"));
                   if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -584,16 +560,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   if (jobsDoc.isEmpty) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(16)
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 30),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
                       child: Column(
                         children: [
-                          Icon(Icons.history, size: 40, color: Colors.grey.shade400),
-                          const SizedBox(height: 8),
-                          Text("Henüz tamamlanan iş yok.", style: TextStyle(color: Colors.grey.shade600)),
+                          Icon(Icons.history, size: 40, color: Colors.grey.shade300),
+                          const SizedBox(height: 12),
+                          Text("Henüz tamamlanan iş yok.", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600, fontSize: 14)),
                         ],
                       ),
                     );
@@ -605,7 +578,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final fromCity = data["fromCity"] ?? "Bilinmiyor";
                       final toCity = data["toCity"] ?? "Bilinmiyor";
                       final weight = data["weightKg"] ?? "0";
-
                       String dateStr = "";
                       final doneAt = data["doneAt"] as Timestamp?;
                       if (doneAt != null) {
@@ -613,29 +585,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         dateStr = "${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}";
                       }
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: isDriver ? Colors.orange.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
-                            child: Icon(
-                              isDriver ? Icons.local_shipping : Icons.outbox,
-                              color: isDriver ? Colors.orange : Colors.blue,
-                            ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: isDriver ? Colors.orange.withOpacity(0.1) : primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                            child: Icon(isDriver ? Icons.local_shipping_outlined : Icons.outbox_outlined, color: isDriver ? Colors.orange.shade800 : primaryBlue),
                           ),
-                          title: Text("$fromCity ➔ $toCity", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          title: Text("$fromCity ➔ $toCity", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: primaryDark)),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              isDriver ? "Yük Taşıdınız • $weight kg" : "Yük Gönderdiniz • $weight kg",
-                              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                            ),
+                            child: Text(isDriver ? "Taşıdınız • $weight kg" : "Gönderdiniz • $weight kg", style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                           ),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -643,18 +606,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  "Tamamlandı",
-                                  style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
+                                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                                child: Text("Tamamlandı", style: TextStyle(color: Colors.green.shade700, fontSize: 10, fontWeight: FontWeight.w800)),
                               ),
                               if (dateStr.isNotEmpty) ...[
                                 const SizedBox(height: 6),
-                                Text(dateStr, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                Text(dateStr, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
                               ]
                             ],
                           ),
@@ -666,16 +623,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
 
               if (isDriver) ...[
-                const SizedBox(height: 24),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 8),
-                  child: Text("Değerlendirmelerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 32),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 12),
+                  child: Text("Değerlendirmelerim", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: primaryDark)),
                 ),
                 StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: FirebaseFirestore.instance.collection("ratings").where("toUserId", isEqualTo: uid).snapshots(),
                   builder: (context, snap) {
                     if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-
                     final docs = snap.data!.docs.toList();
                     docs.sort((a, b) {
                       final ta = (a.data()["createdAt"] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
@@ -685,10 +641,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     if (docs.isEmpty) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 30),
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
-                        child: Text("Henüz bir yorum almadınız.", style: TextStyle(color: Colors.grey.shade600)),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+                        child: Text("Henüz bir yorum almadınız.", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600, fontSize: 14)),
                       );
                     }
 
@@ -698,25 +654,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final stars = data["stars"] ?? 5;
                         final note = data["note"] ?? "";
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            title: Row(
-                              children: List.generate(5, (i) => Icon(
-                                i < stars ? Icons.star : Icons.star_border,
-                                color: Colors.amber,
-                                size: 18,
-                              )),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(note.toString().trim().isEmpty ? "Yorum yapılmadı." : "❝ $note ❞", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade800)),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: List.generate(5, (i) => Icon(i < stars ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber, size: 20)),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  note.toString().trim().isEmpty ? "Yorum yapılmadı." : "❝ $note ❞",
+                                  style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade700, fontSize: 14, height: 1.4),
+                                ),
+                              ],
                             ),
                           ),
                         );

@@ -6,65 +6,77 @@ import 'package:flutter/services.dart';
 class RoleSelectScreen extends StatelessWidget {
   const RoleSelectScreen({super.key});
 
+  // 🟢 LOGIMAP 2026 RENKLERİ 🟢
+  final Color logimapNavy = const Color(0xFF081226);
+  final Color logimapBlue = const Color(0xFF1976D2);
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: Colors.grey.shade50, // Ferah arkaplan
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
           children: [
-
-            const SizedBox(height: 20),
-
+            // 🟢 LOGO VE BAŞLIK ALANI 🟢
             Center(
               child: Column(
                 children: [
-
                   Container(
-                    width: 150,
-                    height: 150,
-                    decoration: const BoxDecoration(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: logimapNavy.withOpacity(0.2),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: ClipOval(
                       child: Image.asset(
                         "assets/logo.png",
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Eğer logo dosyası henüz yoksa şık bir ikon gösterir
+                          return Icon(Icons.local_shipping, size: 60, color: logimapBlue);
+                        },
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
+                  const SizedBox(height: 24),
                   Text(
                     "LogiMap",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    style: TextStyle(
+                      fontSize: 32,
                       fontWeight: FontWeight.w900,
+                      color: logimapNavy,
+                      letterSpacing: -0.5,
                     ),
                   ),
-
-                  const SizedBox(height: 4),
-
+                  const SizedBox(height: 6),
                   Text(
                     "Akıllı Nakliye Platformu",
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30),
-
+            // 🟢 ŞOFÖR KARTI 🟢
             _RoleCard(
               title: "Şoför",
               subtitle: "Haritadan işleri gör, teklif ver ve kabul edilen işlere yol tarifini aç.",
-              icon: Icons.local_shipping,
-              color: cs.primaryContainer,
+              icon: Icons.local_shipping_outlined,
+              iconColor: logimapBlue,
               onTap: () {
                 appState.setRole("driver");
                 Navigator.pushReplacement(
@@ -73,14 +85,14 @@ class RoleSelectScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 14),
-
+            // 🟢 YÜK SAHİBİ KARTI 🟢
             _RoleCard(
               title: "Yük Sahibi",
               subtitle: "İlan ver, gelen teklifleri gör ve en uygun şoförle işi eşleştir.",
-              icon: Icons.inventory_2,
-              color: cs.secondaryContainer,
+              icon: Icons.inventory_2_outlined,
+              iconColor: logimapBlue,
               onTap: () {
                 appState.setRole("shipper");
                 Navigator.pushReplacement(
@@ -89,70 +101,57 @@ class RoleSelectScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 32),
 
-            const SizedBox(height: 24),
-
+            // 🟢 BİLGİLENDİRME KUTUSU 🟢
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outlineVariant),
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                border: Border.all(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock_outline, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 10),
+                  Icon(Icons.lock_outline, color: Colors.grey.shade600, size: 24),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       "Rol seçimi sadece arayüz yönlendirmesi içindir. Hesap rolü Firestore profilinden doğrulanır.",
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600, height: 1.4),
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 20),
-
-
+            // 🟢 ÇIKIŞ BUTONU 🟢
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.exit_to_app),
-                label: const Text("Uygulamadan Çık"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              height: 52,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.exit_to_app, size: 20),
+                label: const Text("Uygulamadan Çık", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
                 ),
                 onPressed: () {
                   SystemNavigator.pop();
                 },
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
+            // 🟢 FOOTER 🟢
             Center(
               child: Column(
-                children: const [
-                  Text(
-                    "LogiMap v1.0",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "© 2026 LogiMap",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
+                children: [
+                  Text("LogiMap v1.0", style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text("© 2026 LogiMap", style: TextStyle(fontSize: 12, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -163,69 +162,88 @@ class RoleSelectScreen extends StatelessWidget {
   }
 }
 
+// 🟢 ÖZEL MODERN ROL KARTI WIDGET'I 🟢
 class _RoleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color color;
+  final Color iconColor;
   final VoidCallback onTap;
 
   const _RoleCard({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.color,
+    required this.iconColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: cs.outlineVariant),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: color,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // İkon Kutusu
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, size: 28, color: iconColor),
                 ),
-                child: Icon(icon, size: 30),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
+                const SizedBox(width: 16),
+                // Yazılar
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: Color(0xFF081226),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(color: cs.onSurfaceVariant),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
+                const SizedBox(width: 8),
+                // Sağ Ok (Chevron)
+                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 28),
+              ],
+            ),
           ),
         ),
       ),
